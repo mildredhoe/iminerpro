@@ -1,0 +1,34 @@
+[project]
+name = "minerpro"
+version = "0.1.0"
+description = "MinerPro — minería de criptomonedas real en local o conectada a plataformas cloud"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "typer>=0.12",
+  "rich>=13.7",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+minerpro = "minerpro.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/minerpro"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Errores deliberados en una herramienta de resiliencia: capturar Exception amplio,
+# dejar archivos de log abiertos a propósito, y no fallar si un comando externo falla.
+ignore = ["BLE001", "S110", "SIM115", "PLW1510", "PIE810", "UP045", "UP037", "SIM108"]
