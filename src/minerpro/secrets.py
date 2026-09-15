@@ -75,3 +75,12 @@ def delete(name: str) -> None:
 
 def storage_backend() -> str:
     return "keyring" if _keyring() is not None else "file (0600)"
+
+
+def resolve(name: str, *env_names: str) -> str | None:
+    """Busca un secreto en variables de entorno y luego en el almacén seguro."""
+    for env in env_names:
+        value = os.environ.get(env)
+        if value:
+            return value.strip()
+    return load(name)

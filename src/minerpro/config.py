@@ -41,6 +41,30 @@ def logs_dir() -> Path:
     return p
 
 
+def load_env() -> list[Path]:
+    """Carga variables desde `.env` del proyecto y de ~/.minerpro/.env.
+
+    No sobreescribe variables ya definidas en el entorno del proceso. Devuelve los
+    archivos que existían. Formato simple: KEY=VALUE, # comentarios.
+    """
+    loaded: list[Path] = []
+    candidates = [Path.cwd() / ".env", app_dir() / ".env"]
+    for path in candidates:
+        if not path.is_file():
+            continue
+        loaded.append(path)
+        for raw in path.read_text().splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    return loaded
+
+
 @dataclass
 class Profile:
     """Un perfil de minado: wallet + pool + ajustes de motor."""

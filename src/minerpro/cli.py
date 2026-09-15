@@ -7,6 +7,7 @@ configuraciones y muestra el comando exacto. El minado lo arranca el usuario con
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from typing import Optional
@@ -16,12 +17,15 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, coins, hardware, secrets, tui
-from .cloud import providers as cloud_providers
-from .cloud.nicehash import KEY_ID, KEY_ORG, KEY_SECRET, NiceHashClient
-from .config import Profile
+from . import __version__, coins, hardware, secrets, stratum, tui
+from .config import Profile, load_env
 from .engines.external import ExternalEngine
 from .engines.xmrig import DEFAULT_HTTP_PORT, XmrigEngine
+from .platforms import all_platforms
+from .platforms import catalog as provider_catalog
+from .platforms import get as get_platform
+from .platforms.binance import BinanceClient
+from .platforms.nicehash import NiceHashClient
 from .pools import stats as pool_stats
 from .pools.registry import POOLS, by_name, default_pool
 
@@ -46,6 +50,7 @@ def main_callback(
     version: bool = typer.Option(False, "--version", callback=_version_callback, is_eager=True),
 ) -> None:
     """MinerPro: prepara todo para minar de verdad (BTC o XMR, local o nube)."""
+    load_env()
 
 
 # --------------------------------------------------------------------------- #
@@ -221,71 +226,209 @@ def plan(
 
 
 # --------------------------------------------------------------------------- #
-# Nube
+# Nube: plataformas conectables (NiceHash, Binance, ...)
 # --------------------------------------------------------------------------- #
+@cloud_app.command("platforms")
+def cloud_platforms() -> None:
+    """Plataformas que se pueden conectar por API."""
+    t = Table(title="Plataformas conectables")
+    t.add_column("ID", style="bold cyan")
+    t.add_column("Nombre")
+    t.add_column("Tipo")
+    t.add_column("Monedas")
+    t.add_column("Claves")
+    for p in all_platforms():
+        t.add_row(p.id, p.name, p.kind, ", ".join(p.coins), p.keys_url)
+    console.print(t)
+    console.print("[grey50]Ver el paso a paso: minerpro cloud guide <id>[/grey50]")
+
+
+@cloud_app.command("guide")
+def cloud_guide(
+    platform: str = typer.Argument(..., help="ID de la plataforma (nicehash, binance)"),
+) -> None:
+    """Cómo obtener las API keys y dónde pegarlas en MinerPro."""
+    try:
+        p = get_platform(platform)
+    except KeyError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(2)
+    from rich.text import Text
+
+    body = "\n".join(p.guide_lines())
+    console.print(Panel(Text(body), title=f"Guía: {p.name}", border_style="cyan"))
+    console.print(f"[grey50]Almacén de claves actual: {secrets.storage_backend()}[/grey50]")
+
+
+@cloud_app.command("connect")
+def cloud_connect(
+    platform: str = typer.Argument(..., help="ID de la plataforma (nicehash, binance)"),
+) -> None:
+    """Pide las credenciales y las guarda de forma segura (llavero del sistema)."""
+    try:
+        p = get_platform(platform)
+    except KeyError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(2)
+
+    console.print(f"[bold]{p.name}[/bold] · obtén tus claves en {p.keys_url}")
+    console.print("[grey50]Permisos necesarios:[/grey50]")
+    for perm in p.api_permissions:
+        console.print(f"  · {perm}")
+
+    for f in p.fields:
+        while True:
+            value = typer.prompt(f"  {f.label}", hide_input=f.secret, default="")
+            if value:
+                break
+            console.print("  [yellow]requerido[/yellow]")
+        secrets.store(f.key, value)
+
+    console.print(f"[green]✓[/green] Credenciales de {p.name} guardadas en {secrets.storage_backend()}")
+    console.print(f"  Verifica con: minerpro cloud status {p.id}")
+
+
+@cloud_app.command("status")
+def cloud_status(
+    platform: str = typer.Argument("nicehash", help="ID de la plataforma"),
+) -> None:
+    """Consulta (solo lectura) tu cuenta en la plataforma."""
+    try:
+        p = get_platform(platform)
+    except KeyError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(2)
+
+    if p.id == "nicehash":
+        client = NiceHashClient.from_store()
+        if client is None:
+            console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
+            console.print("[grey50]O define MINERPRO_NICEHASH_KEY / _SECRET / _ORG en .env[/grey50]")
+            raise typer.Exit(1)
+        try:
+            acc = client.accounts()
+        except Exception as e:
+            console.print(f"[red]Error consultando NiceHash:[/red] {e}")
+            raise typer.Exit(1)
+        t = Table(title="NiceHash · balance (solo lectura)")
+        t.add_column("Moneda", style="bold cyan")
+        t.add_column("Disponible")
+        t.add_column("Pendiente")
+        for item in acc.get("total", {}).get("accounts", []) or acc.get("accounts", []) or []:
+            t.add_row(
+                str(item.get("currency", "?")),
+                str(item.get("available", "0")),
+                str(item.get("pending", "0")),
+            )
+        console.print(t)
+        return
+
+    if p.id == "binance":
+        client = BinanceClient.from_store()
+        if client is None:
+            console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect binance")
+            console.print("[grey50]O define MINERPRO_BINANCE_KEY / _SECRET en .env[/grey50]")
+            raise typer.Exit(1)
+        try:
+            st = client.status()
+            accts = client.accounts()
+        except Exception as e:
+            console.print(f"[red]Error consultando Binance:[/red] {e}")
+            raise typer.Exit(1)
+        t = Table(title="Binance Pool · cuentas de minería (solo lectura)")
+        t.add_column("Moneda", style="bold cyan")
+        t.add_column("Hashrate")
+        t.add_column("Algo")
+        for item in accts.get("data", []) or []:
+            t.add_row(
+                str(item.get("type", "?")).upper(),
+                str(item.get("hashRate", "0")),
+                ", ".join(item.get("algoName", "").split(",")) if item.get("algoName") else "",
+            )
+        console.print(t)
+        console.print(f"[grey50]Estado de la cuenta: {st.get('data', st)}[/grey50]")
+        return
+
+    console.print(f"[yellow]{p.name} no tiene conector de lectura todavía.[/yellow]")
+
+
+@cloud_app.command("stratum")
+def cloud_stratum(
+    platform: str = typer.Argument(..., help="ID de la plataforma"),
+    coin: str = typer.Option("XMR", "--coin", "-c", help="BTC o XMR"),
+    wallet: str = typer.Option("", "--wallet", "-w", help="Tu dirección/cuenta"),
+    account: str = typer.Option("", "--account", help="Cuenta de minería (Binance)"),
+    worker: str = typer.Option("rig1", "--worker", help="Nombre del worker"),
+    tls: bool = typer.Option(False, "--tls", help="Usar el puerto TLS"),
+    write_xmrig: bool = typer.Option(
+        False, "--write-xmrig", help="Escribir un config.json de XMRig con este destino"
+    ),
+) -> None:
+    """Arma el destino Stratum para empezar a minar (no lanza el minero)."""
+    try:
+        p = get_platform(platform)
+    except KeyError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(2)
+    ep = p.stratum_for(coin)
+    if ep is None:
+        console.print(f"[red]{p.name} no ofrece stratum para {coin}.[/red]")
+        raise typer.Exit(2)
+    try:
+        target = stratum.build_target(ep, wallet=wallet, account=account, worker=worker, tls=tls)
+    except ValueError as e:
+        console.print(f"[red]Falta un dato:[/red] {e}")
+        raise typer.Exit(2)
+
+    t = Table.grid(padding=(0, 2))
+    t.add_column(style="grey50", justify="right")
+    t.add_column(style="bold")
+    t.add_row("Plataforma", p.name)
+    t.add_row("Moneda", coin.upper())
+    t.add_row("Algoritmo", target.algo)
+    t.add_row("Stratum", f"{target.url}" + (" (TLS)" if target.tls else ""))
+    t.add_row("Usuario", target.user)
+    t.add_row("Password", target.password)
+    console.print(Panel(t, title="Destino para tu minero", border_style="green"))
+    if target.notes:
+        console.print(f"[grey50]{target.notes}[/grey50]")
+
+    if write_xmrig:
+        from .engines.xmrig import build_config
+
+        prof = Profile(name=f"{p.id}-{coin.lower()}", wallet=target.user, pool_url=target.url)
+        cfg = build_config(
+            target.user,
+            target.url,
+            coin="monero" if coin.upper() == "XMR" else "bitcoin",
+            tls=target.tls,
+        )
+        cfg["pools"] = [stratum.xmrig_pool_entry(target, "monero" if coin.upper() == "XMR" else "bitcoin")]
+        path = prof.dir() / "config.json"
+        path.write_text(json.dumps(cfg, indent=2))
+        console.print(f"[green]✓[/green] Config de XMRig escrito en {path} (no se ejecutó nada)")
+
+    console.print(
+        "[grey50]Para empezar a minar: usa estos datos en tu minero, o "
+        f"`minerpro mine -c {coin.upper()} -w <tu_wallet>` si el usuario es tu wallet.[/grey50]"
+    )
+
+
 @cloud_app.command("providers")
 def cloud_providers_cmd() -> None:
-    """Catálogo de plataformas de nube/pool con su riesgo."""
-    t = Table(title="Plataformas (ninguna es recomendación de inversión)", show_lines=True)
+    """Catálogo de plataformas (incluye contratos de cloud mining con su riesgo)."""
+    t = Table(title="Catálogo (ninguna es recomendación de inversión)", show_lines=True)
     t.add_column("Plataforma", style="bold cyan")
     t.add_column("Tipo")
     t.add_column("Monedas")
     t.add_column("Fee")
     t.add_column("Riesgo")
     t.add_column("URL")
-    for p in cloud_providers.PROVIDERS:
+    for p in provider_catalog.PROVIDERS:
         risk_style = {"bajo": "green", "medio": "yellow", "alto": "red", "ALTO": "bold red"}.get(p.risk, "white")
         t.add_row(p.name, p.kind, p.coins, p.fee, f"[{risk_style}]{p.risk}[/{risk_style}]", p.url)
     console.print(t)
     console.print("[grey50]MinerPro no compra contratos ni mueve fondos: solo conecta y muestra datos.[/grey50]")
-
-
-@cloud_app.command("connect")
-def cloud_connect(
-    provider: str = typer.Argument("nicehash", help="Proveedor (por ahora: nicehash)"),
-    api_key: str = typer.Option(..., "--api-key", prompt=True),
-    api_secret: str = typer.Option(..., "--api-secret", prompt=True, hide_input=True),
-    org_id: str = typer.Option("", "--org-id"),
-) -> None:
-    """Guarda credenciales de API en el llavero (nunca en texto plano si hay keyring)."""
-    if provider.lower() != "nicehash":
-        console.print("[red]Proveedor no soportado todavía.[/red]")
-        raise typer.Exit(2)
-    secrets.store(KEY_ID, api_key)
-    secrets.store(KEY_SECRET, api_secret)
-    if org_id:
-        secrets.store(KEY_ORG, org_id)
-    console.print(f"[green]✓[/green] Credenciales guardadas en {secrets.storage_backend()}")
-
-
-@cloud_app.command("status")
-def cloud_status(
-    provider: str = typer.Argument("nicehash", help="Proveedor"),
-) -> None:
-    """Consulta (solo lectura) tu cuenta en la plataforma."""
-    if provider.lower() != "nicehash":
-        console.print("[red]Proveedor no soportado todavía.[/red]")
-        raise typer.Exit(2)
-    client = NiceHashClient.from_store()
-    if client is None:
-        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
-        raise typer.Exit(1)
-    try:
-        acc = client.accounts()
-    except Exception as e:
-        console.print(f"[red]Error consultando NiceHash:[/red] {e}")
-        raise typer.Exit(1)
-    t = Table(title="NiceHash (solo lectura)")
-    t.add_column("Moneda", style="bold cyan")
-    t.add_column("Disponible")
-    t.add_column("Pendiente")
-    for item in acc.get("total", {}).get("accounts", []) or acc.get("accounts", []):
-        t.add_row(
-            str(item.get("currency", "?")),
-            str(item.get("available", "0")),
-            str(item.get("pending", "0")),
-        )
-    console.print(t)
 
 
 # --------------------------------------------------------------------------- #

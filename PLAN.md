@@ -38,21 +38,36 @@ Regla: **MinerPro no mina solo**. Nunca arranca en segundo plano ni al instalar.
   - `base.py` — interfaz común (`prepare/start/stop/stats/logs`).
 - `pools/` — registro de pools reales (XMR: SupportXMR, MoneroOcean, HashVault, p2pool;
   BTC: CKPool Solo, Public Pool, Braiins) + clientes de stats por wallet.
-- `cloud/` — **nube (solo lectura)**: catálogo de plataformas con riesgo, y cliente
-  **NiceHash API v2** (firma HMAC-SHA256) para ver cuentas/rigs/órdenes.
+- `platforms/` — **plataformas conectables** (registro + guía + cliente):
+  - `nicehash.py` — API v2 con firma HMAC-SHA256 (layout del demo oficial), balance,
+    rigs, órdenes y **stratum** (`randomxmonero.auto.nicehash.com:9200`).
+  - `binance.py` — Binance Pool / Cloud Mining con firma HMAC en el query string y
+    header `X-MBX-APIKEY` (workers, ganancias, cloud-mining ledger) y stratum
+    (`sha256.poolbinance.com:8888`).
+  - `catalog.py` — catálogo de plataformas/contratos con **nivel de riesgo**.
+- `stratum.py` — arma el destino (host, puerto, usuario) para apuntar el minero.
 - `secrets.py` — API keys en el llavero del sistema (Keychain/DPAPI/Secret Service);
-  fallback a archivo `0600`.
+  fallback a archivo `0600`; también lee variables `MINERPRO_*`.
+- `config.py` — perfiles + carga de `.env` (cwd y `~/.minerpro/.env`).
 - `tui.py` — dashboard Rich con datos reales.
 - `cli.py` — comandos: `doctor`, `coins`, `pools`, `wallet`, `install`, `plan`,
   `poolstats`, `cloud ...`, `mine [--dry-run]`.
 
 ### 2.2 Qué significa "nube" aquí (real y honesto)
-1. **Stats de pool por wallet** (SupportXMR, MoneroOcean, HashVault, ckpool): pending/paid reales.
-2. **NiceHash** (marketplace de hashrate): API v2 con HMAC; se consulta balance y órdenes.
-3. **Catálogo de proveedores** con fee, modelo y **nivel de riesgo** (los "contratos"
-   se marcan **ALTO**: ahí viven las estafas tipo Ponzi).
+1. **Plataformas conectables por API** (solo lectura + guía de claves):
+   - **NiceHash** — marketplace de hashrate. Se leen balance/rigs/órdenes (API v2 con
+     firma HMAC-SHA256) y se arma su stratum para apuntar tu minero (RandomX o SHA-256).
+   - **Binance Pool / Cloud Mining** — pool con API firmada (workers, ganancias,
+     historial de cloud mining) y su stratum para ASIC de BTC.
+   - Cada plataforma trae su **guía paso a paso** (`minerpro cloud guide <id>`) con las
+     URLs oficiales, los permisos exactos a habilitar y **dónde se pegan las claves**:
+     interactivo (`cloud connect`, va al llavero) o `.env` (`MINERPRO_*`).
+2. **Stats de pool por wallet** (SupportXMR, MoneroOcean, HashVault, ckpool): pending/paid reales.
+3. **Catálogo de proveedores** con fee, modelo y **nivel de riesgo** (los "contratos" se
+   marcan **ALTO**: ahí viven las estafas tipo Ponzi).
 
-MinerPro **no compra contratos, no mueve fondos, no automatiza pagos**. Conecta y muestra.
+MinerPro **no compra contratos, no mueve fondos, no automatiza pagos** y **no arranca el
+minado solo**. Conecta, guía y muestra; tú decides cuándo minar.
 
 ## 3. Estructura del repo
 
@@ -61,10 +76,12 @@ minerpro_oficial/
 ├── pyproject.toml            # paquete instalable (pipx / uv)
 ├── src/minerpro/
 │   ├── cli.py  coins.py  wallet.py  btc.py  hardware.py  config.py  secrets.py  tui.py
+│   ├── stratum.py
 │   ├── engines/{base,xmrig,external}.py
 │   ├── pools/{registry,stats}.py
-│   └── cloud/{providers,nicehash}.py
-└── tests/                    # 13 tests (wallets XMR/BTC, motores, registro)
+│   └── platforms/{base,nicehash,binance,catalog}.py
+├── docs/plataformas.md       # cómo obtener y colocar las API keys
+└── tests/                    # 24 tests (wallets, motores, firmas, stratum)
 ```
 
 ## 4. Estado por fase
@@ -75,7 +92,7 @@ minerpro_oficial/
 | 1 · Minado local real (XMRig gestionado + TUI) | ✅ hecha | — |
 | 2 · Persistencia + histórico (SQLite) | ⏳ | guardar series de hashrate/shares |
 | 3 · Stats de pool + estimación honesta | 🟡 parcial | cliente XMR hecho; falta BTC y estimador |
-| 4 · Nube (NiceHash + catálogo) | 🟡 parcial | cliente y catálogo listos; falta probar con credenciales reales |
+| 4 · Nube: NiceHash + Binance + guía de claves | 🟡 avanzada | conectores y onboarding hechos; falta probar con credenciales reales del usuario |
 | 5 · Backend nativo Apple Silicon (`mxmr`) | ⏳ | reconstruir core RandomX (`randomx-rs`) |
 | 6 · Distribución (binarios, brew, winget, `curl \| sh`) | ⏳ | empaquetado PyInstaller + CI |
 

@@ -39,10 +39,15 @@ minerpro wallet <direccion>           # valida XMR o BTC (checksum real)
 minerpro plan -c XMR -w <tu_xmr>
 minerpro plan -c BTC -w <tu_btc> --miner-cmd "cgminer -o {url} -u {user} -p {pass}"
 
-# Nube
+# Nube / plataformas (solo lectura + armar el stratum)
+minerpro cloud platforms              # qué plataformas se pueden conectar
 minerpro cloud providers              # catálogo con nivel de riesgo
-minerpro cloud connect nicehash       # guarda API key en el llavero
+minerpro cloud guide nicehash         # cómo obtener la API key paso a paso
+minerpro cloud connect nicehash       # pegarla (va al llavero del sistema)
 minerpro cloud status nicehash        # balance real (solo lectura)
+minerpro cloud status binance         # cuentas de minería (solo lectura)
+minerpro cloud stratum nicehash -c XMR -w <btc_de_nicehash> --write-xmrig
+minerpro cloud stratum binance  -c BTC --account MiningBTC --worker rig1
 
 # Minar de verdad (lo decides tú)
 minerpro mine -c XMR -w <tu_xmr>                 # TUI en vivo con XMRig
@@ -58,11 +63,13 @@ minerpro poolstats --wallet <tu_xmr> --pool SupportXMR
 - ✅ Detección de hardware, CLI, perfiles, validación de wallets XMR y BTC.
 - ✅ XMR local con XMRig gestionado (descarga + SHA-256 + config + API + TUI).
 - ✅ BTC local vía minero externo Stratum (genera y muestra el comando).
-- ✅ Nube: stats de pool por wallet + cliente NiceHash API v2 + catálogo con riesgo.
+- ✅ Nube: stats de pool por wallet + **NiceHash** (API v2, HMAC) + **Binance Pool/Cloud
+  Mining** (API firmada), con guía de cómo obtener las claves y dónde pegarlas
+  (llavero o `.env`), y armado del destino Stratum para empezar a minar.
 - ⏳ Histórico en SQLite, estimador de ganancia, backend nativo Apple Silicon, binarios
   y distribuidores (brew/winget/`curl | sh`).
 
-Ver `PLAN.md` para el detalle y los criterios de aceptación.
+Ver `PLAN.md` y `docs/plataformas.md` para el detalle.
 
 ## Seguridad
 
