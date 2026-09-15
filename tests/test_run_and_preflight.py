@@ -86,11 +86,17 @@ class TestPreflight:
         assert preflight.check_port_free(port).ok is True
 
     def test_binario_inexistente_es_fatal(self):
-        ch = preflight.check_binary(__import__("pathlib").Path("/no/existe/xmrig"))
+        from pathlib import Path
+
+        ch = preflight.check_binary(Path("/no/existe/xmrig"))
         assert ch.ok is False and ch.fatal is True
 
     def test_binario_ejecutable(self):
-        ch = preflight.check_binary(__import__("pathlib").Path("/bin/echo"))
+        # sys.executable existe y responde --version en los tres sistemas
+        import sys
+        from pathlib import Path
+
+        ch = preflight.check_binary(Path(sys.executable))
         assert ch.ok is True
 
     def test_minero_externo_no_necesita_binario(self):
