@@ -1,17 +1,25 @@
 # Conectar plataformas (NiceHash y Binance)
 
-MinerPro se conecta a plataformas **solo para leer** (balances, workers, ganancias) y
-para **armar el destino Stratum** con el que tu minero empieza a minar. Nunca retira,
-compra ni mueve fondos, y **nunca arranca el minado solo**.
+MinerPro trabaja con las plataformas en **dos niveles**:
 
-Todos los comandos verifican la conexión y avisan con claridad si falta algo.
+| Nivel | Qué permite | Cómo se activa |
+|---|---|---|
+| **Lectura** (por defecto) | Balance, rigs, workers, órdenes, ganancias, mercado | Cualquier API key de lectura |
+| **Acciones** | Crear pool, comprar/recargar/cancelar órdenes, reventa de hashrate | `allow_write` en el cliente **más** `--confirm` en el comando |
+
+Los comandos que gastan dinero **nunca** se ejecutan sin `--confirm`: sin ese flag,
+MinerPro te muestra exactamente qué haría y se detiene.
+
+No hay endpoints de retiro en MinerPro. Nunca habilites `Withdrawal` en tus claves.
 
 ---
 
 ## NiceHash (marketplace de hashrate)
 
 **Qué es:** tú pones el hardware (o apuntas tu minero) y NiceHash te compra el hashrate,
-pagándote normalmente en BTC. Soporta RandomX (XMRig) y SHA-256 (ASIC).
+pagándote normalmente en BTC. También funciona al revés: **compras hashrate** a otros
+mineros para que minen hacia tu pool (cloud mining real). Soporta RandomX (XMRig) y
+SHA-256 (ASIC).
 
 ### 1) Obtener las credenciales
 
@@ -66,6 +74,43 @@ minerpro cloud stratum nicehash -c XMR -w <tu_btc> --write-xmrig
 
 > Confirma siempre el host exacto en el generador oficial:
 > <https://www.nicehash.com/stratum-generator>
+
+### 5) Ver el mercado (sin claves)
+
+```bash
+minerpro cloud market --algo SHA256          # order book en vivo
+minerpro cloud market --algo RANDOMXMONERO   # precio del hashrate de RandomX
+```
+
+Lee el order book público de NiceHash: precio, mercado, velocidad y cuántos rigs tiene
+cada orden. Sirve para decidir a qué precio comprar antes de tocar nada.
+
+### 6) Comprar hashrate (cloud mining real)
+
+Comprar hashrate significa pagar BTC a otros mineros para que minen hacia **tu pool**.
+Es la forma "nube" más transparente: ves el mercado y decides.
+
+```bash
+# 1. Vista previa y confirmación de las acciones (no ejecuta nada sin --confirm)
+minerpro cloud market -a SHA256
+minerpro cloud rigs                     # qué está reportando tu cuenta
+minerpro cloud orders -a SHA256         # tus órdenes existentes
+
+# 2. Registrar la pool de destino en NiceHash (una vez)
+minerpro cloud pool-add --name supportxmr --algo SHA256 \
+    --host pool.supportxmr.com --port 3333 --username <tu_wallet> --confirm
+
+# 3. Crear la orden
+minerpro cloud buy --algo SHA256 --market EU --price 0.0001 \
+    --amount 0.001 --limit 1 --pool-id <id> --confirm
+
+# 4. Gestionarla
+minerpro cloud refill --order-id <id> --amount 0.001 --confirm
+minerpro cloud cancel --order-id <id> --confirm
+```
+
+Sin `--confirm`, `pool-add`, `buy`, `refill` y `cancel` te muestran qué harían y salen
+con código 1. Nadie gasta BTC por accidente.
 
 ---
 
@@ -128,11 +173,38 @@ minerpro cloud stratum binance -c BTC --account MiningBTC --worker rig1
 Te da `sha256.poolbinance.com:8888` (respaldo `:443`) y el usuario `MiningBTC.rig1`
 («cuenta de minería».«worker»).
 
+### 5) Ver tus workers y ganancias
+
+```bash
+minerpro cloud workers  -a sha256d --account MiningBTC
+minerpro cloud earnings -a sha256d --account MiningBTC --coin BTC
+minerpro cloud status binance        # resumen de cuentas de minería
+```
+
+### 6) Reventa de hashrate (acción, requiere escritura)
+
+Puedes reasignar parte de tu hashrate a otra cuenta de pool. Es una acción que modifica
+tu cuenta, así que el cliente exige `allow_write` y el comando (si se usa desde la API
+en tu código) debe confirmarse explícitamente. Usa la API de Binance con cuidado:
+
+- `POST /sapi/v1/mining/hash-transfer/config` (crear)
+- `POST /sapi/v1/mining/hash-transfer/config/cancel` (cancelar)
+- `GET /sapi/v1/mining/hash-transfer/config/details/list` (listar)
+
+```python
+from minerpro.platforms.binance import BinanceClient
+
+client = BinanceClient.from_store(allow_write=True)   # explícito
+client.resale_list()                                  # solo lectura
+```
+
 ---
 
 ## Seguridad (aplica a todas las plataformas)
 
-- Claves **solo de lectura**. Nunca habilites retiros ni trading.
+- Claves de **lectura** por defecto. Nunca habilites retiros ni trading.
+- Solo habilita escritura si vas a comprar hashrate (NiceHash) o reasignar hashrate
+  (Binance), y aun así todo pasa por `--confirm`.
 - Restringe por IP cuando la plataforma lo permita (Binance sí).
 - Con `keyring` instalado, las claves van al llavero del sistema; si no, a
   `~/.minerpro/secrets.json` con permisos `0600`.

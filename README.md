@@ -4,32 +4,30 @@
 
 <br>
 
-**Mina criptomonedas de verdad, sin humo y sin sorpresas.**
-Todo queda listo en un comando: tu wallet validada, tu pool elegida, el minero verificado
-y el dashboard en vivo. **El minado lo arrancas tú.**
+**Mina criptomonedas de verdad.** Local con tu hardware, o en la nube comprando
+hashrate real en NiceHash. Todo validado, todo verificado, y cada acción que gasta
+dinero pasa por tu confirmación.
 
 <br>
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-3DA639?style=for-the-badge)](#-licencia)
-[![Tests](https://img.shields.io/badge/tests-24%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
+[![Tests](https://img.shields.io/badge/tests-28%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
 [![CI](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml)
-[![Plataformas](https://img.shields.io/badge/macOS%20%7C%20Linux%20%7C%20Windows-0b0d0f?style=for-the-badge)](#-inicio-rápido)
 [![Estrellas](https://img.shields.io/github/stars/mildredhoe/iminerpro?style=for-the-badge&color=f1c40f)](https://github.com/mildredhoe/iminerpro/stargazers)
 
 [![Monedas](https://img.shields.io/badge/monedas-BTC%20%7C%20XMR-f7931a?style=flat-square)](#-monedas-y-modos)
 [![Modos](https://img.shields.io/badge/modos-local%20%7C%20nube-8be9fd?style=flat-square)](#-monedas-y-modos)
-[![Plataformas](https://img.shields.io/badge/api-NiceHash%20%7C%20Binance-6f42c1?style=flat-square)](#-plataformas-y-nube)
-[![Sin autoarranque](https://img.shields.io/badge/autoarranque-no%20nunca-e5484d?style=flat-square)](#-seguridad)
+[![Plataformas](https://img.shields.io/badge/api-NiceHash%20%7C%20Binance-6f42c1?style=flat-square)](#-plataformas)
+[![Acciones](https://img.shields.io/badge/hashrate-comprar%20%7C%20cancelar%20%7C%20recargar-50fa7b?style=flat-square)](#-plataformas)
 
 <br>
 
 [Inicio rápido](#-inicio-rápido) ·
-[Características](#-características) ·
 [Cómo funciona](#-cómo-funciona) ·
 [Comandos](#-comandos) ·
-[Plataformas](#-plataformas-y-nube) ·
-[Seguridad](#-seguridad) ·
+[Plataformas](#-plataformas) ·
+[Acceso y seguridad](#-acceso-y-seguridad) ·
 [Roadmap](#-roadmap)
 
 </div>
@@ -38,23 +36,25 @@ y el dashboard en vivo. **El minado lo arrancas tú.**
 
 ## 💡 Qué es MinerPro
 
-MinerPro es una herramienta de terminal que **prepara y ejecuta minería real** de
-criptomonedas en tu propio equipo o apuntando tu hardware a plataformas de la nube.
+Una herramienta de terminal que **mina criptomonedas de verdad**: hashea en tu equipo
+o compra hashrate en la nube, y te muestra el resultado en un dashboard en vivo.
 
-La mayoría de los "mineros fáciles" son una de dos cosas: un script que simula ganancias,
-o una caja negra que instala software sin que sepas qué corre. MinerPro hace lo contrario:
+No hay números inventados en ninguna pantalla:
 
-- 🔍 **Nada simulado.** El hashrate y los shares vienen de la API local del minero; el
-  balance pendiente/pagado viene de la API pública de la pool.
-- 🛡️ **Nada oculto.** El binario de XMRig se descarga **solo** del release oficial y se
-  verifica por **SHA-256** antes de ejecutarse.
-- 🚦 **Nada automático.** MinerPro no empieza a minar al instalar ni en segundo plano.
-  Revisa, decide y ejecuta.
+- 🔍 **Datos reales.** Hashrate y shares salen de la API local del minero; balance
+  pendiente/pagado, de la API pública de tu pool.
+- 📈 **Mercado en vivo.** `minerpro cloud market` lee el order book de NiceHash en
+  tiempo real, sin claves.
+- 🛠️ **Acciones de verdad.** Registrar tu pool, comprar hashrate, recargar y cancelar
+  órdenes: todo contra la API real, y siempre con tu confirmación explícita.
+- 🛡️ **Verificado.** XMRig se descarga **solo** del release oficial y se valida por
+  **SHA-256** antes de ejecutarse.
 
 > [!WARNING]
 > Mina **solo en equipos de tu propiedad** o con permiso explícito. La minería consume
-> electricidad y calienta el hardware. Los "contratos de cloud mining" tienen riesgo alto
-> de estafa: MinerPro los cataloga, pero **nunca** compra ni mueve fondos.
+> electricidad y calienta el hardware, y comprar hashrate gasta dinero real. Los
+> "contratos de cloud mining" de terceros tienen riesgo alto de estafa: MinerPro los
+> cataloga con su nivel de riesgo, pero **nunca** firma uno por ti.
 
 ---
 
@@ -62,38 +62,33 @@ o una caja negra que instala software sin que sepas qué corre. MinerPro hace lo
 
 <div align="center">
 
-<img src="assets/terminal-coins.svg" alt="Salida real de minerpro coins" width="760">
-<br><br>
-<img src="assets/terminal-doctor.svg" alt="Salida real de minerpro doctor" width="760">
+**Dashboard de minado en vivo** (datos de ejemplo, así se ve con tu equipo real)
 
-<sub>Salidas reales de <code>minerpro coins</code> y <code>minerpro doctor</code>. Los SVG se generan
-desde la salida de verdad con <code>scripts/make_readme_assets.py</code>.</sub>
+<img src="assets/terminal-mine.svg" alt="Dashboard de MinerPro minando RandomX" width="820">
+
+<br><br>
+
+**Mercado de hashrate de NiceHash en vivo** (esta captura se regenera desde la API real)
+
+<img src="assets/terminal-market.svg" alt="Mercado de hashrate de NiceHash" width="820">
+
+<br><br>
+
+**Detección de hardware**
+
+<img src="assets/terminal-doctor.svg" alt="Detección de hardware de MinerPro" width="820">
+
+<sub>
+Los SVG se generan desde la salida real de los comandos con
+<code>scripts/make_readme_assets.py</code>. El dashboard usa datos de ejemplo marcados
+como <code>DEMO</code>; el mercado se lee de la API pública de NiceHash.
+</sub>
 
 </div>
 
 ---
 
-## ✨ Características
-
-| | Característica | Detalle |
-|---|---|---|
-| 🪙 | **Dos monedas** | Monero (**XMR**, RandomX, ideal en CPU) y Bitcoin (**BTC**, SHA-256d, ASIC) |
-| 🖥️ | **Minado local** | XMR vía XMRig gestionado; BTC vía tu ASIC/minero Stratum |
-| ☁️ | **Modo nube** | NiceHash (marketplace de hashrate) y Binance Pool / Cloud Mining, por API |
-| 🔐 | **Wallets validadas de verdad** | Monero (base58 CryptoNote + checksum Keccak-256) y Bitcoin (base58check + bech32/bech32m) |
-| ✅ | **Minero verificado** | XMRig se descarga del release oficial y se valida con `SHA256SUMS` |
-| 📊 | **Dashboard en vivo** | Hashrate, shares aceptados/rechazados, workers y log real, en una TUI con Rich |
-| 🌐 | **Stats de pool** | Balance pendiente/pagado leído de la API real de la pool para tu wallet |
-| 🔑 | **Onboarding de API keys** | Guía paso a paso de cómo obtener cada clave y dónde pegarla |
-| 🗄️ | **Claves seguras** | Llavero del sistema (Keychain / DPAPI / Secret Service) o archivo `0600` |
-| 🧾 | **Perfiles** | Varios perfiles de minado persistidos en `~/.minerpro` |
-
----
-
 ## 🧭 Cómo funciona
-
-MinerPro separa el **qué** (moneda, pool, wallet) del **cómo** (motor de hashing), así se
-puede añadir una moneda o un backend sin tocar la experiencia.
 
 ```mermaid
 flowchart LR
@@ -103,7 +98,7 @@ flowchart LR
         COINS["coins<br/>BTC · XMR"]
         WALLET["wallet / btc<br/>validación de direcciones"]
         POOLS["pools<br/>registro + stats"]
-        STRATUM["stratum<br/>destino para el minero"]
+        STRATUM["stratum<br/>destino del minero"]
     end
 
     subgraph ENG["Motores de hashing"]
@@ -111,39 +106,48 @@ flowchart LR
         EXT["external<br/>ASIC / Stratum propio"]
     end
 
-    subgraph CLOUD["Plataformas (solo lectura)"]
-        NH["NiceHash API v2<br/>HMAC-SHA256"]
-        BN["Binance Pool / Cloud<br/>HMAC + X-MBX-APIKEY"]
+    subgraph CLOUD["Plataformas (API real)"]
+        NH["NiceHash<br/>mercado + órdenes"]
+        BN["Binance Pool / Cloud<br/>workers + ganancias"]
     end
 
-    CLI --> COINS & WALLET & POOLS & STRATUM
+    CLI --> CORE
     COINS --> ENG
     XMRIG --> POOLS
-    STRATUM --> CLOUD
-    CLOUD --> CLI
-    POOLS --> CLI
+    ENG --> STRATUM
+    STRATUM --> NH & BN
+    NH & BN --> CLI
 ```
 
-**El flujo de una sesión de minado:**
+**Dos formas de minar:**
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor U as Usuario
     participant MP as MinerPro
-    participant X as XMRig (local)
-    participant P as Pool / Plataforma
+    participant M as Minero (XMRig / ASIC)
+    participant P as Pool o plataforma
 
+    rect rgb(20, 32, 24)
+    note over U,P: Local
     U->>MP: minerpro mine -c XMR -w <wallet>
-    MP->>MP: valida wallet (checksum)
-    MP->>MP: descarga XMRig y verifica SHA-256
-    MP->>X: lanza con config.json (pool + wallet)
-    X->>P: login Stratum
-    P-->>X: jobs y dificultad
-    X-->>MP: hashrate + shares (API local :18080)
-    MP-->>U: TUI en vivo
-    MP->>P: consulta balance (API pública de la pool)
-    P-->>U: pendiente / pagado reales
+    MP->>MP: valida wallet + verifica XMRig (SHA-256)
+    MP->>M: lanza con config.json (pool + wallet)
+    M->>P: login Stratum
+    P-->>M: jobs y dificultad
+    M-->>MP: hashrate y shares (API local)
+    MP-->>U: dashboard en vivo
+    end
+
+    rect rgb(24, 24, 38)
+    note over U,P: Nube (comprar hashrate)
+    U->>MP: minerpro cloud market
+    MP->>P: order book real de NiceHash
+    U->>MP: cloud pool-add + cloud buy --confirm
+    MP->>P: crea pool y orden de hashrate
+    P-->>U: hashrate minando hacia tu pool
+    end
 ```
 
 ---
@@ -154,63 +158,83 @@ sequenceDiagram
 
 ```bash
 git clone https://github.com/mildredhoe/iminerpro.git
-cd minerpro
+cd iminerpro
 uv venv .venv && uv pip install -e .      # o: pipx install .
 ```
 
 > Requiere **Python 3.10+**. No necesitas compilar nada.
 
-### Primeros pasos (sin minar todavía)
+### Explora sin gastar nada
 
 ```bash
 minerpro doctor                       # detecta tu hardware y los mineros disponibles
+minerpro demo mine                    # cómo se ve el dashboard (datos de ejemplo)
 minerpro coins                        # BTC vs XMR: qué conviene en tu equipo
 minerpro wallet <tu_direccion>        # valida una wallet XMR o BTC (checksum real)
-
-minerpro plan -c XMR -w <tu_xmr>      # explica qué haría, SIN ejecutar nada
+minerpro cloud market --algo SHA256   # mercado de hashrate en vivo, sin claves
+minerpro plan -c XMR -w <tu_xmr>      # explica qué haría, sin ejecutar nada
 ```
 
-### Empezar a minar (tú lo decides)
+### Minar en local
 
 ```bash
-# XMR en local con XMRig + dashboard en vivo
+# XMR con XMRig + dashboard en vivo
 minerpro mine -c XMR -w <tu_xmr>
 
 # BTC con tu ASIC o minero Stratum
 minerpro mine -c BTC -w <tu_btc> --miner-cmd "cgminer -o {url} -u {user} -p {pass}"
 ```
 
-### Conectar la nube
+### Minar en la nube (comprar hashrate)
 
 ```bash
-minerpro cloud guide nicehash         # cómo crear la API key, paso a paso
-minerpro cloud connect nicehash       # la guardas en el llavero del sistema
-minerpro cloud status nicehash        # balance real (solo lectura)
+minerpro cloud guide nicehash            # cómo crear la API key, paso a paso
+minerpro cloud connect nicehash          # la guardas en el llavero del sistema
 
-minerpro cloud stratum nicehash -c XMR -w <btc_de_nicehash>   # destino para minar
+minerpro cloud market -a SHA256          # mira precios reales antes de comprar
+minerpro cloud pool-add --name mi-pool --algo SHA256 \
+    --host pool.supportxmr.com --port 3333 --username <tu_wallet> --confirm
+minerpro cloud buy -a SHA256 --market EU --price 0.0001 --amount 0.001 \
+    --limit 1 --pool-id <id> --confirm   # sin --confirm no se ejecuta
 ```
 
 ---
 
 ## 🧰 Comandos
 
+### Locales
+
 | Comando | Qué hace | ¿Mina? |
 |---|---|:---:|
 | `minerpro doctor` | Detecta hardware y mineros disponibles | No |
-| `minerpro coins` | Muestra BTC y XMR: cómo se mina en local y nube | No |
-| `minerpro pools [--coin XMR]` | Lista pools reales con fee y API de stats | No |
+| `minerpro demo [mine\|doctor]` | Muestra la interfaz con datos de ejemplo | No |
+| `minerpro coins` | BTC y XMR: cómo se mina en local y nube | No |
+| `minerpro pools [--coin XMR]` | Pools reales con fee y API de stats | No |
 | `minerpro wallet <dir>` | Valida una dirección XMR o BTC | No |
 | `minerpro install` | Descarga y verifica XMRig (SHA-256) | No |
 | `minerpro plan -c XMR -w <dir>` | Explica exactamente qué haría | No |
 | `minerpro poolstats -w <dir> -p <pool>` | Balance real reportado por la pool | No |
-| `minerpro cloud platforms` | Plataformas conectables | No |
-| `minerpro cloud guide <id>` | Cómo obtener las API keys y dónde pegarlas | No |
-| `minerpro cloud connect <id>` | Guarda credenciales en el llavero | No |
-| `minerpro cloud status <id>` | Consulta la cuenta (solo lectura) | No |
-| `minerpro cloud stratum <id>` | Arma el destino Stratum para tu minero | No |
-| `minerpro cloud providers` | Catálogo de plataformas con nivel de riesgo | No |
 | `minerpro mine ... --dry-run` | Muestra el plan y no ejecuta nada | No |
 | **`minerpro mine ...`** | **Arranca el minado real** | **Sí** |
+
+### Plataformas
+
+| Comando | Qué hace | ¿Gasta dinero? |
+|---|---|:---:|
+| `minerpro cloud platforms` | Plataformas conectables | No |
+| `minerpro cloud providers` | Catálogo con nivel de riesgo | No |
+| `minerpro cloud guide <id>` | Cómo obtener las API keys y dónde pegarlas | No |
+| `minerpro cloud connect <id>` | Guarda credenciales en el llavero | No |
+| `minerpro cloud market -a SHA256` | Order book en vivo de NiceHash (sin claves) | No |
+| `minerpro cloud status nicehash` | Balance de tu cuenta | No |
+| `minerpro cloud rigs` | Tus rigs reportando a NiceHash | No |
+| `minerpro cloud orders -a SHA256` | Tus órdenes de hashrate | No |
+| `minerpro cloud workers -a sha256d --account X` | Workers de Binance Pool | No |
+| `minerpro cloud earnings -a sha256d --account X` | Ganancias de Binance Pool | No |
+| `minerpro cloud pool-add ... --confirm` | Registra tu pool en NiceHash | No |
+| `minerpro cloud buy ... --confirm` | Compra hashrate en NiceHash | **Sí (BTC)** |
+| `minerpro cloud refill ... --confirm` | Recarga una orden existente | **Sí (BTC)** |
+| `minerpro cloud cancel ... --confirm` | Cancela una orden | No |
 
 ---
 
@@ -218,51 +242,52 @@ minerpro cloud stratum nicehash -c XMR -w <btc_de_nicehash>   # destino para min
 
 | Moneda | Algoritmo | Local | Nube | Realidad honesta |
 |---|---|---|---|---|
-| **Monero (XMR)** | RandomX `rx/0` | XMRig (CPU), `mxmr` nativo en Mac, P2Pool | NiceHash (paga en BTC), stats de pool | Es la mejor opción para minar local en un PC normal |
-| **Bitcoin (BTC)** | SHA-256d | ASIC / minero Stratum propio | Binance Pool, NiceHash, pools solo | En un PC es inviable para ganar: tiene sentido como lotería o con ASIC |
-
-**Modos:**
-
-- **Local**: el hashing ocurre en tu equipo. Máximo control, cero dependencia de terceros.
-- **Nube**: apuntas tu hardware (o consultas) a plataformas con API. Más comodidad, más
-  dependencia y más riesgo de contraparte.
+| **Monero (XMR)** | RandomX `rx/0` | XMRig (CPU), P2Pool | NiceHash (paga en BTC) | La mejor opción para minar local en un PC normal |
+| **Bitcoin (BTC)** | SHA-256d | ASIC / Stratum propio | Binance Pool, NiceHash, pools solo | En un PC es inviable para ganar: lotería o ASIC |
 
 ---
 
-## ☁️ Plataformas y nube
+## ☁️ Plataformas
 
-| Plataforma | Tipo | Monedas | Acceso | Permisos que pedimos |
+| Plataforma | Tipo | Monedas | Lectura | Acciones |
 |---|---|---|---|---|
-| **NiceHash** | Marketplace de hashrate | BTC, XMR | API v2 con firma HMAC-SHA256 | `Mining` lectura + `Wallet` lectura |
-| **Binance Pool / Cloud Mining** | Pool + cloud mining | BTC | HMAC en query + `X-MBX-APIKEY` | `Enable Reading` + restricción de IP |
-| SupportXMR · MoneroOcean · HashVault | Pools XMR | XMR | API pública por wallet | ninguna (solo lectura) |
+| **NiceHash** | Marketplace de hashrate | BTC, XMR | Balance, rigs, órdenes, mercado | Crear pool, comprar/recargar/cancelar órdenes |
+| **Binance Pool / Cloud Mining** | Pool + cloud mining | BTC | Cuenta, workers, ganancias, historial cloud | Reventa de hashrate (hashrate resale) |
+| SupportXMR · MoneroOcean · HashVault | Pools XMR | XMR | Stats por wallet | ninguna (solo lectura) |
 | CKPool Solo · Public Pool · Braiins | Pools BTC | BTC | Stratum / API pública | ninguna |
 
-Todo se conecta **solo para leer** (balances, workers, ganancias) y para **armar el destino
-Stratum** con el que tu minero empieza a minar. MinerPro **no retira, no compra contratos y
-no mueve fondos**.
-
-📖 Guía detallada: [`docs/plataformas.md`](docs/plataformas.md)
+📖 Guía detallada de claves y permisos: [`docs/plataformas.md`](docs/plataformas.md)
 
 ---
 
-## 🔐 Seguridad
+## 🔐 Acceso y seguridad
 
-- 🔑 **Solo lectura.** Las API keys que MinerPro pide son de lectura. Nunca habilites retiros.
-- 🗄️ **Claves cifradas.** Se guardan en el llavero del sistema (`keyring`); si no está
-  disponible, en `~/.minerpro/secrets.json` con permisos `0600`.
-- 📁 **`.env` fuera de git.** Ya está en `.gitignore`. Documentado en [`.env.example`](.env.example).
-- ✅ **Binario verificado.** XMRig se descarga del release oficial y se compara con `SHA256SUMS`.
-- 🚦 **Sin autoarranque.** No hay daemons, ni cron, ni procesos ocultos. Si no ejecutas
-  `minerpro mine`, no se mina.
-- ⚠️ **Contratos de cloud mining = riesgo ALTO.** Se listan para que sepas qué evitar.
+MinerPro usa un modelo de **dos niveles**, para que un error o un script mal escrito no
+pueda vaciarte la cuenta:
+
+| Nivel | Qué permite | Cómo se activa |
+|---|---|---|
+| **Lectura** (por defecto) | Ver balance, rigs, workers, órdenes, mercado | Con cualquier API key de lectura |
+| **Acciones** | Crear pool, comprar/recargar/cancelar órdenes, reventa de hashrate | `allow_write` en el cliente **más** `--confirm` en el comando |
+
+Por eso verás `--confirm` en los comandos que gastan dinero: sin él, MinerPro te muestra
+exactamente qué haría y **no ejecuta nada**.
+
+Otras garantías:
+
+- 🔑 **Sin retiros.** MinerPro nunca pide ni usa permisos de retiro (Withdrawal). Pídelos
+  deshabilitados en la API key.
+- 🗄️ **Claves cifradas.** Llavero del sistema (`keyring`); si no está, `~/.minerpro/secrets.json` con `0600`.
+- 📁 **`.env` fuera de git.** Ya está en `.gitignore`. Plantilla en [`.env.example`](.env.example).
+- ✅ **Binario verificado.** XMRig se valida contra `SHA256SUMS` del release oficial.
+- 🧾 **Sin fondos por su cuenta.** MinerPro no compra contratos de terceros ni invierte nada.
 
 ---
 
 ## 📁 Estructura del proyecto
 
 ```
-minerpro/
+iminerpro/
 ├── src/minerpro/
 │   ├── cli.py            # comandos (Typer)
 │   ├── coins.py          # modelo de moneda: BTC, XMR
@@ -272,14 +297,15 @@ minerpro/
 │   ├── config.py         # perfiles y carga de .env
 │   ├── secrets.py        # claves en el llavero del sistema
 │   ├── stratum.py        # destino Stratum para el minero
+│   ├── demo.py           # datos de ejemplo marcados como DEMO
 │   ├── tui.py            # dashboard en vivo (Rich)
 │   ├── engines/          # xmrig (gestionado), external (ASIC/Stratum)
 │   ├── pools/            # registro de pools + stats por wallet
-│   └── platforms/        # nicehash, binance, catálogo con riesgo
+│   └── platforms/        # nicehash (mercado + órdenes), binance, catálogo
 ├── docs/plataformas.md   # cómo obtener y colocar las API keys
 ├── scripts/              # generación de los SVG del README
 ├── assets/               # banner y capturas
-└── tests/                # 24 tests
+└── tests/                # 28 tests
 ```
 
 ---
@@ -293,8 +319,11 @@ minerpro/
 | ✅ | Minado local XMR con XMRig gestionado + TUI en vivo |
 | ✅ | Minado local BTC vía minero externo Stratum |
 | ✅ | Stats de pool por wallet |
-| ✅ | NiceHash y Binance Pool por API, con onboarding de claves |
-| 🚧 | Histórico en SQLite y estimador de ganancia honesto |
+| ✅ | NiceHash: mercado en vivo, balance, rigs, órdenes |
+| ✅ | NiceHash: comprar, recargar y cancelar hashrate (con confirmación) |
+| ✅ | Binance Pool: workers, ganancias, reventa de hashrate |
+| 🚧 | Estimador de costo/beneficio con datos reales del mercado |
+| 🚧 | Histórico en SQLite |
 | ⏳ | Backend nativo RandomX para Apple Silicon |
 | ⏳ | Binarios y distribuidores: Homebrew, winget, `curl \| sh` |
 | 💡 | Más monedas (RVN, RTM) y más plataformas |
@@ -304,54 +333,56 @@ minerpro/
 ## ❓ Preguntas frecuentes
 
 <details>
-<summary><b>¿Esto realmente mina, o simula ganancias?</b></summary>
+<summary><b>¿Los comandos de nube realmente funcionan o solo muestran datos?</b></summary>
 
-Mina de verdad. El hashrate y los shares vienen de la API local del minero, y el balance
-de la API pública de la pool. No hay números inventados en ninguna pantalla.
+Hacen las dos cosas. `cloud market` lee el order book real de NiceHash sin claves.
+`cloud buy`, `cloud refill`, `cloud cancel` y `cloud pool-add` ejecutan la acción real
+en tu cuenta cuando agregas `--confirm`.
+</details>
+
+<details>
+<summary><b>¿Por qué hay un modo lectura y otro de acciones?</b></summary>
+
+Porque las mismas claves que compran hashrate podrían, con un bug, gastar de más. El
+modo lectura es el default; las acciones piden `allow_write` en el cliente y `--confirm`
+en el comando. Así lo que gasta dinero siempre pasa por una decisión tuya.
 </details>
 
 <details>
 <summary><b>¿Empieza a minar solo cuando lo instalo?</b></summary>
 
-No. Nunca. Solo mina cuando ejecutas `minerpro mine` sin `--dry-run`.
+No. No hay daemons, ni cron, ni procesos en segundo plano. Solo se mina (y solo se
+compra hashrate) cuando ejecutas el comando correspondiente.
 </details>
 
 <details>
 <summary><b>¿Es seguro conectar mi cuenta de Binance o NiceHash?</b></summary>
 
-Sí, siempre que uses API keys de **solo lectura** y (en Binance) restrinjas la IP.
-MinerPro no tiene endpoints de escritura: no puede retirar ni operar.
+Sí, con API keys de **lectura** y (en Binance) restricción de IP. Si además quieres
+comprar hashrate, habilita escritura solo en Mining y **nunca** retiros.
 </details>
 
 <details>
 <summary><b>¿Por qué BTC en un PC no sirve?</b></summary>
 
-La red de Bitcoin usa ASIC. Un CPU/GPU no compite. Para BTC, MinerPro apunta tu ASIC o tu
-hashrate arrendado; seamos honestos con las expectativas.
-</details>
-
-<details>
-<summary><b>¿Qué necesito para XMR?</b></summary>
-
-Una wallet Monero y un PC con al menos 4 GB de RAM. XMRig se descarga y verifica solo.
+La red de Bitcoin usa ASIC. Un CPU/GPU no compite. Para BTC, MinerPro apunta tu ASIC,
+usa una pool solo (lotería) o compra hashrate en la nube.
 </details>
 
 ---
 
 ## 🤝 Contribuir
 
-¡Las ideas y los PRs son bienvenidos!
-
-1. Haz un fork y crea una rama: `git checkout -b feat/mi-mejora`
-2. Instala en modo desarrollo: `uv venv .venv && uv pip install -e ".[dev]"`
-3. Pasa los tests y el linter: `pytest -q && ruff check src tests`
-4. Abre un Pull Request contando qué problema resuelve.
+1. Fork y rama: `git checkout -b feat/mi-mejora`
+2. Desarrollo: `uv venv .venv && uv pip install -e ".[dev]"`
+3. Antes del PR: `pytest -q && ruff check src tests`
+4. Abre el Pull Request contando qué problema resuelve.
 
 ## 🛠️ Desarrollo
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]"
-pytest -q                 # 24 tests
+pytest -q                 # 28 tests
 ruff check src tests      # lint
 
 # regenerar los SVG del README desde la salida real

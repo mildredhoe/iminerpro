@@ -72,7 +72,7 @@ def _header(profile_name: str, pool: Pool, stats: MinerStats) -> Panel:
     info.add_column(style=DIM, justify="right")
     info.add_column(style="bold")
     info.add_row("perfil", profile_name)
-    info.add_row("pool", f"{pool.name}  {DIM}{stats.pool or pool.url}")
+    info.add_row("pool", f"{pool.name}  [grey50]{stats.pool or pool.url}[/grey50]")
     info.add_row("algoritmo", stats.algo or pool.algo)
     info.add_row("CPU", stats.cpu_brand or "—")
     info.add_row("uptime", fmt_duration(stats.uptime_s))
@@ -114,8 +114,7 @@ def _shares_panel(stats: MinerStats, pool: PoolStats | None) -> Panel:
     return Panel(t, title="Shares y balance", border_style=YELLOW)
 
 
-def _logs_panel(engine: MinerEngine) -> Panel:
-    lines = engine.logs(14)
+def _logs_panel(lines: list[str]) -> Panel:
     text = Text()
     for ln in lines:
         ln = ln.rstrip("\n")
@@ -130,6 +129,23 @@ def _logs_panel(engine: MinerEngine) -> Panel:
     if not lines:
         text.append("esperando salida del minero…", style=DIM)
     return Panel(text, title="Log de XMRig (real)", border_style=DIM)
+
+
+def render_frame(
+    profile_name: str,
+    pool: Pool,
+    stats: MinerStats,
+    pool_state: "PoolStats | None",
+    logs: list[str],
+    history: list[float],
+) -> Group:
+    """Un cuadro completo del dashboard, reutilizable por la TUI y por `demo`."""
+    return Group(
+        _header(profile_name, pool, stats),
+        _hashrate_panel(stats, history),
+        _shares_panel(stats, pool_state),
+        _logs_panel(logs),
+    )
 
 
 def run(
@@ -148,12 +164,7 @@ def run(
     last_pool_fetch = 0.0
 
     def render(stats: MinerStats) -> Group:
-        return Group(
-            _header(profile_name, pool, stats),
-            _hashrate_panel(stats, history),
-            _shares_panel(stats, pool_state),
-            _logs_panel(engine),
-        )
+        return render_frame(profile_name, pool, stats, pool_state, engine.logs(14), list(history))
 
     try:
         with Live(render(MinerStats()), console=console, refresh_per_second=4, screen=False) as live:

@@ -54,20 +54,20 @@ Regla: **MinerPro no mina solo**. Nunca arranca en segundo plano ni al instalar.
   `poolstats`, `cloud ...`, `mine [--dry-run]`.
 
 ### 2.2 Qué significa "nube" aquí (real y honesto)
-1. **Plataformas conectables por API** (solo lectura + guía de claves):
-   - **NiceHash** — marketplace de hashrate. Se leen balance/rigs/órdenes (API v2 con
-     firma HMAC-SHA256) y se arma su stratum para apuntar tu minero (RandomX o SHA-256).
-   - **Binance Pool / Cloud Mining** — pool con API firmada (workers, ganancias,
-     historial de cloud mining) y su stratum para ASIC de BTC.
+1. **Plataformas conectables por API**, en dos niveles:
+   - **Lectura** (por defecto): balance, rigs, workers, órdenes, ganancias y el order
+     book público de NiceHash (`minerpro cloud market`, sin claves).
+   - **Acciones** (opt-in): registrar pool, comprar/recargar/cancelar órdenes de hashrate
+     en NiceHash y reventa de hashrate en Binance. Requieren `allow_write` en el cliente
+     **y** `--confirm` en el comando: sin `--confirm` no se ejecuta nada.
    - Cada plataforma trae su **guía paso a paso** (`minerpro cloud guide <id>`) con las
-     URLs oficiales, los permisos exactos a habilitar y **dónde se pegan las claves**:
-     interactivo (`cloud connect`, va al llavero) o `.env` (`MINERPRO_*`).
+     URLs oficiales, los permisos exactos y **dónde se pegan las claves** (llavero o `.env`).
 2. **Stats de pool por wallet** (SupportXMR, MoneroOcean, HashVault, ckpool): pending/paid reales.
 3. **Catálogo de proveedores** con fee, modelo y **nivel de riesgo** (los "contratos" se
    marcan **ALTO**: ahí viven las estafas tipo Ponzi).
 
-MinerPro **no compra contratos, no mueve fondos, no automatiza pagos** y **no arranca el
-minado solo**. Conecta, guía y muestra; tú decides cuándo minar.
+MinerPro **no retira fondos, no firma contratos de terceros y no arranca el minado solo**.
+Las acciones que gastan dinero pasan siempre por confirmación explícita del usuario.
 
 ## 3. Estructura del repo
 
@@ -92,7 +92,7 @@ minerpro_oficial/
 | 1 · Minado local real (XMRig gestionado + TUI) | ✅ hecha | — |
 | 2 · Persistencia + histórico (SQLite) | ⏳ | guardar series de hashrate/shares |
 | 3 · Stats de pool + estimación honesta | 🟡 parcial | cliente XMR hecho; falta BTC y estimador |
-| 4 · Nube: NiceHash + Binance + guía de claves | 🟡 avanzada | conectores y onboarding hechos; falta probar con credenciales reales del usuario |
+| 4 · Nube: NiceHash + Binance, lectura y acciones | 🟡 avanzada | conectores, acciones con `--confirm` y onboarding hechos; falta probar con credenciales reales |
 | 5 · Backend nativo Apple Silicon (`mxmr`) | ⏳ | reconstruir core RandomX (`randomx-rs`) |
 | 6 · Distribución (binarios, brew, winget, `curl \| sh`) | ⏳ | empaquetado PyInstaller + CI |
 

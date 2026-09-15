@@ -107,3 +107,78 @@ def test_load_env_reads_file(tmp_path, monkeypatch):
     import os
 
     assert os.environ["MINERPRO_TEST_VAR"] == "hola"
+
+
+# --------------------------------------------------------------------------- #
+# Escritura desactivada por defecto (nada mueve fondos sin permiso explícito)
+# --------------------------------------------------------------------------- #
+def test_nicehash_writes_blocked_by_default():
+    from minerpro.platforms.nicehash import NiceHashClient, NiceHashWriteDisabled
+
+    client = NiceHashClient("key", "secret", "org")  # allow_write=False
+    for call in (
+        lambda: client.create_pool("p", "SHA256", "host", 3333, "user"),
+        lambda: client.cancel_order("id"),
+        lambda: client.refill_order("id", 0.001),
+        lambda: client.create_order(
+            market="EU", algorithm="SHA256", price=1.0, limit=1.0, amount=0.001, pool_id="p"
+        ),
+        lambda: client.set_price_and_limit("id", price=1.0, limit=1.0, algorithm="SHA256"),
+    ):
+        with pytest.raises(NiceHashWriteDisabled):
+            call()
+
+
+def test_binance_writes_blocked_by_default():
+    from minerpro.platforms.binance import BinanceClient
+
+    client = BinanceClient("key", "secret")  # allow_write=False
+    with pytest.raises(PermissionError):
+        client.resale_create(
+            user_name="acc",
+            algo="sha256d",
+            to_pool_user="otro",
+            hash_rate=1.0,
+            start_ms=0,
+            end_ms=1,
+        )
+    with pytest.raises(PermissionError):
+        client.resale_cancel("config", "acc")
+
+
+# --------------------------------------------------------------------------- #
+# Mercado público (sin claves)
+# --------------------------------------------------------------------------- #
+def test_public_nicehash_parses_market(monkeypatch):
+    from minerpro.platforms import nicehash
+
+    def fake_get(path, params=None, timeout=20.0):
+        if "simplemultialgo" in path:
+            return {
+                "miningAlgorithms": [
+                    {"algorithm": "SHA256", "title": "SHA256", "paying": 7.1e-11, "speed": 1280.0},
+                    {"algorithm": "RANDOMXMONERO", "title": "RandomXmonero", "paying": 0.03, "speed": 100000.0},
+                ]
+            }
+        if path.endswith("/algorithms/"):
+            return {"miningAlgorithms": [{"algorithm": "SHA256", "displayMarketFactor": "EH"}]}
+        if "orders/active2" in path:
+            return {"list": [{"price": "0.71", "rigsCount": 51}, {"price": "0.70", "rigsCount": 0}]}
+        return {}
+
+    monkeypatch.setattr(nicehash, "public_get", fake_get)
+    nh = nicehash.PublicNiceHash()
+    paying = nh.paying_by_algo()
+    assert paying["SHA256"]["paying"] == pytest.approx(7.1e-11)
+    assert nh.algorithm("sha256")["displayMarketFactor"] == "EH"
+    assert nh.best_price("SHA256") == pytest.approx(0.70)
+
+
+def test_demo_output_is_labelled_and_does_not_print(capsys):
+    from minerpro import demo
+
+    text = demo.to_stdout("mine", width=100)
+    assert "DEMO" in text.splitlines()[0]
+    assert "13.84 kH/s" in text
+    captured = capsys.readouterr()
+    assert captured.out == ""  # el modo demo no imprime en stdout por su cuenta

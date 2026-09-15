@@ -45,23 +45,32 @@ class BinanceClient:
     key: str
     secret: str
     recv_window: int = 5000
+    allow_write: bool = False
 
     @classmethod
-    def from_store(cls) -> "BinanceClient | None":
+    def from_store(cls, allow_write: bool = False) -> "BinanceClient | None":
         from .. import secrets
 
         key = secrets.resolve(KEY_ID, "MINERPRO_BINANCE_KEY")
         sec = secrets.resolve(KEY_SECRET, "MINERPRO_BINANCE_SECRET")
         if not key or not sec:
             return None
-        return cls(key, sec)
+        return cls(key, sec, allow_write=allow_write)
 
-    def _get(self, path: str, params: dict | None = None) -> dict:
+    def _require_write(self) -> None:
+        if not self.allow_write:
+            raise PermissionError(
+                "Esta acción modifica tu cuenta y la escritura está desactivada. "
+                "Se habilita explícitamente y con `--confirm` en el CLI."
+            )
+
+    def _request(self, method: str, path: str, params: dict | None = None) -> dict:
         full = dict(params or {})
         full["timestamp"] = int(time.time() * 1000)
         full["recvWindow"] = self.recv_window
         query = sign_query(full, self.secret)
-        r = httpx.get(
+        r = httpx.request(
+            method,
             f"{BASE_URL}{path}?{query}",
             headers={"X-MBX-APIKEY": self.key, "Accept": "application/json"},
             timeout=20,
@@ -69,6 +78,9 @@ class BinanceClient:
         if r.status_code >= 400:
             raise RuntimeError(f"Binance {r.status_code}: {r.text[:300]}")
         return r.json()
+
+    def _get(self, path: str, params: dict | None = None) -> dict:
+        return self._request("GET", path, params)
 
     # -- minería (pool) ------------------------------------------------------ #
     def coins(self) -> dict:
@@ -110,6 +122,52 @@ class BinanceClient:
             {"startTime": start, "endTime": end, "current": 1, "size": size},
         )
 
+    # -- reventa de hashrate (mueve tu hashrate; requiere escritura) ---------- #
+    def resale_list(self, page: int = 1, size: int = 20) -> dict:
+        return self._get(
+            "/sapi/v1/mining/hash-transfer/config/details/list",
+            {"pageIndex": page, "pageSize": size},
+        )
+
+    def resale_profit(self, config_id: str, user_name: str, page: int = 1, size: int = 20) -> dict:
+        return self._get(
+            "/sapi/v1/mining/hash-transfer/profit/details",
+            {"configId": config_id, "userName": user_name, "pageIndex": page, "pageSize": size},
+        )
+
+    def resale_create(
+        self,
+        *,
+        user_name: str,
+        algo: str,
+        to_pool_user: str,
+        hash_rate: float,
+        start_ms: int,
+        end_ms: int,
+    ) -> dict:
+        """Pide reasignar tu hashrate a otra cuenta de pool (requiere escritura)."""
+        self._require_write()
+        return self._request(
+            "POST",
+            "/sapi/v1/mining/hash-transfer/config",
+            {
+                "userName": user_name,
+                "algo": algo,
+                "startDate": start_ms,
+                "endDate": end_ms,
+                "toPoolUser": to_pool_user,
+                "hashRate": hash_rate,
+            },
+        )
+
+    def resale_cancel(self, config_id: str, user_name: str) -> dict:
+        self._require_write()
+        return self._request(
+            "POST",
+            "/sapi/v1/mining/hash-transfer/config/cancel",
+            {"configId": config_id, "userName": user_name},
+        )
+
 
 BINANCE = register(
     Platform(
@@ -129,12 +187,14 @@ BINANCE = register(
             "Copia la API Key y el Secret Key (el secret se muestra una vez).",
         ],
         api_permissions=[
-            "Enable Reading (lectura): obligatorio para consultar pool y cloud mining",
+            "Enable Reading (lectura): obligatorio para pool, worker y cloud mining",
             "Restricción de IP: agrega tu IP pública",
+            "Solo si vas a reasignar hashrate (reventa): permisos de escritura en Mining",
             "NO habilitar: retiros (Withdrawals) ni Spot/Futures trading",
         ],
         warnings=[
-            "Nunca habilites retiros en la API key. MinerPro solo lee.",
+            "Nunca habilites retiros en la API key.",
+            "Las acciones que modifican tu cuenta (reventa de hashrate) piden confirmación explícita.",
             "Binance Pool no mina Monero (XMR): para XMR usa NiceHash o una pool XMR.",
         ],
         fields=[

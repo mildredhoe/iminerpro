@@ -8,6 +8,7 @@ configuraciones y muestra el comando exacto. El minado lo arranca el usuario con
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from typing import Optional
@@ -18,6 +19,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from . import __version__, coins, hardware, secrets, stratum, tui
+from . import demo as demo_mod
 from .config import Profile, load_env
 from .engines.external import ExternalEngine
 from .engines.xmrig import DEFAULT_HTTP_PORT, XmrigEngine
@@ -25,7 +27,7 @@ from .platforms import all_platforms
 from .platforms import catalog as provider_catalog
 from .platforms import get as get_platform
 from .platforms.binance import BinanceClient
-from .platforms.nicehash import NiceHashClient
+from .platforms.nicehash import NiceHashClient, NiceHashWriteDisabled, PublicNiceHash
 from .pools import stats as pool_stats
 from .pools.registry import POOLS, by_name, default_pool
 
@@ -34,9 +36,13 @@ app = typer.Typer(
     help="MinerPro — deja todo listo para minar BTC o XMR, en local o en la nube.",
     no_args_is_help=True,
 )
-cloud_app = typer.Typer(help="Plataformas de nube/pool (solo lectura y conexión).", no_args_is_help=True)
+cloud_app = typer.Typer(
+    help="Plataformas de nube/pool: mercado, cuenta y acciones (con --confirm).",
+    no_args_is_help=True,
+)
 app.add_typer(cloud_app, name="cloud")
-console = Console()
+_columns = os.environ.get("COLUMNS", "")
+console = Console(width=int(_columns)) if _columns.isdigit() else Console()
 
 
 def _version_callback(value: bool) -> None:
@@ -87,7 +93,7 @@ def doctor() -> None:
         console.print(f"[grey50]· {note}[/grey50]")
 
 
-@app.command()
+@app.command("coins")
 def coins_cmd() -> None:  # nombre de función distinto para no chocar con el módulo
     """Muestra BTC y XMR: cómo se mina local y en nube con cada una."""
     t = Table(title="Monedas soportadas", show_lines=True)
@@ -107,7 +113,16 @@ def coins_cmd() -> None:  # nombre de función distinto para no chocar con el m�
     console.print(t)
 
 
-app.command("coins")(coins_cmd)
+@app.command()
+def demo(
+    panel: str = typer.Argument("mine", help="mine (dashboard) o doctor (hardware)"),
+    width: int = typer.Option(100, "--width", help="Ancho de la salida"),
+) -> None:
+    """Muestra la interfaz con datos de EJEMPLO, sin minar ni tocar tu equipo."""
+    if panel not in ("mine", "doctor"):
+        console.print("[red]panel inválido: usa 'mine' o 'doctor'[/red]")
+        raise typer.Exit(2)
+    console.print(demo_mod.to_stdout(panel, width), markup=False, highlight=False, soft_wrap=True)
 
 
 @app.command("pools")
@@ -428,7 +443,334 @@ def cloud_providers_cmd() -> None:
         risk_style = {"bajo": "green", "medio": "yellow", "alto": "red", "ALTO": "bold red"}.get(p.risk, "white")
         t.add_row(p.name, p.kind, p.coins, p.fee, f"[{risk_style}]{p.risk}[/{risk_style}]", p.url)
     console.print(t)
-    console.print("[grey50]MinerPro no compra contratos ni mueve fondos: solo conecta y muestra datos.[/grey50]")
+    console.print("[grey50]MinerPro no compra contratos ni mueve fondos por su cuenta: tú confirmas cada acción.[/grey50]")
+
+
+def _as_list(data, *keys) -> list:
+    """Normaliza respuestas que a veces vienen como lista y a veces envueltas."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in keys:
+            value = data.get(key)
+            if isinstance(value, list):
+                return value
+    return []
+
+
+@cloud_app.command("market")
+def cloud_market(
+    algo: str = typer.Option("SHA256", "--algo", "-a", help="Algoritmo (SHA256, RANDOMXMONERO...)"),
+    top: int = typer.Option(8, "--top", help="Cuántas órdenes mostrar"),
+) -> None:
+    """Mercado de hashrate EN VIVO de NiceHash. No necesita claves."""
+    nh = PublicNiceHash()
+    try:
+        info = nh.algorithm(algo)
+        paying = nh.paying_by_algo().get(algo.upper(), {})
+        orders = nh.active_orders(algo)
+    except Exception as e:
+        console.print(f"[red]No pude leer el mercado:[/red] {e}")
+        raise typer.Exit(1)
+
+    if info:
+        t = Table.grid(padding=(0, 2))
+        t.add_column(style="grey50", justify="right")
+        t.add_column(style="bold")
+        t.add_row("Algoritmo", f"{info.get('algorithm')} ({info.get('title', '')})")
+        t.add_row("Habilitado", "sí" if info.get("enabled") else "no")
+        t.add_row("Factor de mercado", f"{info.get('displayMarketFactor')} ({info.get('marketFactor')})")
+        console.print(Panel(t, title=f"NiceHash · {algo.upper()} · datos en vivo", border_style="cyan"))
+
+    if paying:
+        console.print(f"[grey50]Pago actual (unidades de NiceHash): {paying.get('paying')}[/grey50]")
+        console.print(
+            f"[grey50]Velocidad total del algoritmo: {float(paying.get('speed', 0)):,.2f}[/grey50]"
+        )
+
+    live = [
+        o
+        for o in orders
+        if int(o.get("rigsCount", 0) or 0) > 0 or float(o.get("acceptedCurrentSpeed", 0) or 0) > 0
+    ]
+    live = sorted(live or orders, key=lambda o: float(o.get("price", 0) or 0))[:top]
+    t = Table(title="Órdenes activas con rigs (precio más bajo primero)")
+    t.add_column("Precio", style="bold green", justify="right")
+    t.add_column("Mercado")
+    t.add_column("Velocidad límite", justify="right")
+    t.add_column("Velocidad real", justify="right")
+    t.add_column("Rigs", justify="right")
+    for o in live:
+        t.add_row(
+            f"{float(o.get('price', 0)):.8f}",
+            str(o.get("market", "")),
+            f"{float(o.get('speedLimit', 0) or 0):.6f}",
+            f"{float(o.get('acceptedCurrentSpeed', 0) or 0):.6f}",
+            str(o.get("rigsCount", "")),
+        )
+    console.print(t)
+    console.print(
+        "[grey50]Precio y velocidad van en la unidad de mercado del algoritmo "
+        "(ver 'Factor de mercado' arriba).[/grey50]"
+    )
+
+
+@cloud_app.command("rigs")
+def cloud_rigs(platform: str = typer.Argument("nicehash", help="Plataforma")) -> None:
+    """Tus rigs reportando a NiceHash (solo lectura)."""
+    if platform != "nicehash":
+        console.print("[red]Solo disponible para nicehash.[/red]")
+        raise typer.Exit(2)
+    client = NiceHashClient.from_store()
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
+        raise typer.Exit(1)
+    try:
+        data = client.rigs()
+    except Exception as e:
+        console.print(f"[red]Error consultando rigs:[/red] {e}")
+        raise typer.Exit(1)
+    rigs = _as_list(data, "miningRigs", "rigs")
+    t = Table(title="Rigs en NiceHash")
+    t.add_column("Rig", style="bold cyan")
+    t.add_column("Estado")
+    t.add_column("Dispositivos", justify="right")
+    t.add_column("Rentabilidad BTC/día", justify="right")
+    for r in rigs:
+        prof = r.get("profitability", {}) or {}
+        t.add_row(
+            str(r.get("name", "?")),
+            str(r.get("minerStatus", r.get("status", "?"))),
+            str(len(r.get("devices", []) or [])),
+            f"{float(prof.get('btcPerDay', 0) or r.get('profitabilityBtc', 0) or 0):.8f}",
+        )
+    console.print(t if rigs else "[grey50]No hay rigs reportando.[/grey50]")
+
+
+@cloud_app.command("orders")
+def cloud_orders(
+    algo: str = typer.Option("SHA256", "--algo", "-a"),
+    platform: str = typer.Option("nicehash", "--platform"),
+) -> None:
+    """Tus órdenes de hashrate (solo lectura)."""
+    if platform != "nicehash":
+        console.print("[red]Solo disponible para nicehash.[/red]")
+        raise typer.Exit(2)
+    client = NiceHashClient.from_store()
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
+        raise typer.Exit(1)
+    try:
+        data = client.my_orders(algo)
+    except Exception as e:
+        console.print(f"[red]Error consultando órdenes:[/red] {e}")
+        raise typer.Exit(1)
+    orders = _as_list(data, "orders", "list")
+    t = Table(title=f"Mis órdenes · {algo.upper()}")
+    t.add_column("ID", style="bold cyan")
+    t.add_column("Precio", justify="right")
+    t.add_column("Límite", justify="right")
+    t.add_column("Disponible", justify="right")
+    t.add_column("Estado")
+    for o in orders:
+        t.add_row(
+            str(o.get("id", ""))[:8],
+            f"{float(o.get('price', 0) or 0):.8f}",
+            f"{float(o.get('limit', o.get('speedLimit', 0)) or 0):.6f}",
+            f"{float(o.get('availableAmount', 0) or 0):.8f}",
+            str(o.get("status", {}).get("code", o.get("status", ""))),
+        )
+    console.print(t if orders else "[grey50]Sin órdenes activas.[/grey50]")
+
+
+@cloud_app.command("pool-add")
+def cloud_pool_add(
+    name: str = typer.Option(..., "--name", help="Nombre de la pool en NiceHash"),
+    algo: str = typer.Option("SHA256", "--algo", "-a"),
+    host: str = typer.Option(..., "--host", help="Host Stratum de tu pool"),
+    port: int = typer.Option(..., "--port", help="Puerto Stratum"),
+    username: str = typer.Option(..., "--username", help="Tu wallet/worker en esa pool"),
+    password: str = typer.Option("x", "--password"),
+    confirm: bool = typer.Option(False, "--confirm", help="Confirma la escritura en tu cuenta"),
+) -> None:
+    """Registra una pool en NiceHash para apuntar hashrate comprado (requiere --confirm)."""
+    if not confirm:
+        console.print("[yellow]Falta --confirm.[/yellow] Esta acción escribe en tu cuenta de NiceHash.")
+        raise typer.Exit(1)
+    client = NiceHashClient.from_store(allow_write=True)
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
+        raise typer.Exit(1)
+    try:
+        res = client.create_pool(name, algo.upper(), host, port, username, password)
+    except NiceHashWriteDisabled as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Error creando la pool:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] Pool creada: [bold]{res.get('id', res)}[/bold]")
+
+
+@cloud_app.command("buy")
+def cloud_buy(
+    algo: str = typer.Option("SHA256", "--algo", "-a"),
+    market: str = typer.Option("EU", "--market", help="EU, USA, EU_N, ASIA..."),
+    price: float = typer.Option(..., "--price", help="Precio en BTC por unidad de velocidad"),
+    amount: float = typer.Option(..., "--amount", help="BTC a gastar en la orden"),
+    limit: float = typer.Option(..., "--limit", help="Velocidad máxima a pagar (límite)"),
+    pool_id: str = typer.Option(..., "--pool-id", help="ID de pool en NiceHash (ver cloud pool-add)"),
+    order_type: int = typer.Option(0, "--type", help="0 = estándar, 1 = fija"),
+    confirm: bool = typer.Option(False, "--confirm", help="Confirma el gasto de BTC"),
+) -> None:
+    """Compra hashrate en NiceHash (cloud mining real). Gasta BTC de tu cuenta."""
+    if not confirm:
+        console.print(
+            Panel(
+                f"Esto crea una orden de compra de hashrate:\n"
+                f"  algoritmo {algo.upper()} · mercado {market}\n"
+                f"  precio {price} BTC · gasto {amount} BTC · límite {limit}\n\n"
+                "[yellow]Gasta BTC real de tu cuenta de NiceHash.[/yellow]\n"
+                "Si estás seguro, repite con [bold]--confirm[/bold].",
+                title="Compra de hashrate (no ejecutada)",
+                border_style="yellow",
+            )
+        )
+        raise typer.Exit(1)
+    client = NiceHashClient.from_store(allow_write=True)
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect nicehash")
+        raise typer.Exit(1)
+    try:
+        order = client.create_order(
+            market=market,
+            algorithm=algo,
+            price=price,
+            limit=limit,
+            amount=amount,
+            pool_id=pool_id,
+            order_type=order_type,
+        )
+    except NiceHashWriteDisabled as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Error creando la orden:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] Orden creada: [bold]{order.get('id', order)}[/bold]")
+
+
+@cloud_app.command("cancel")
+def cloud_cancel(
+    order_id: str = typer.Option(..., "--order-id"),
+    confirm: bool = typer.Option(False, "--confirm"),
+) -> None:
+    """Cancela una orden de hashrate en NiceHash."""
+    if not confirm:
+        console.print("[yellow]Falta --confirm.[/yellow] Repite con --confirm para cancelar la orden.")
+        raise typer.Exit(1)
+    client = NiceHashClient.from_store(allow_write=True)
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow]")
+        raise typer.Exit(1)
+    try:
+        client.cancel_order(order_id)
+    except NiceHashWriteDisabled as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Error cancelando:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] Orden {order_id[:8]} cancelada")
+
+
+@cloud_app.command("refill")
+def cloud_refill(
+    order_id: str = typer.Option(..., "--order-id"),
+    amount: float = typer.Option(..., "--amount", help="BTC a agregar"),
+    confirm: bool = typer.Option(False, "--confirm"),
+) -> None:
+    """Agrega BTC a una orden de hashrate existente."""
+    if not confirm:
+        console.print("[yellow]Falta --confirm.[/yellow] Esta acción gasta BTC de tu cuenta.")
+        raise typer.Exit(1)
+    client = NiceHashClient.from_store(allow_write=True)
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow]")
+        raise typer.Exit(1)
+    try:
+        client.refill_order(order_id, amount)
+    except NiceHashWriteDisabled as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Error recargando:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] Orden {order_id[:8]} recargada con {amount} BTC")
+
+
+@cloud_app.command("workers")
+def cloud_workers(
+    algo: str = typer.Option("sha256d", "--algo", "-a", help="Algoritmo del pool (sha256d, etc.)"),
+    account: str = typer.Option(..., "--account", help="Tu cuenta de minería en Binance Pool"),
+    page: int = typer.Option(1, "--page"),
+) -> None:
+    """Workers de tu cuenta de Binance Pool (solo lectura)."""
+    client = BinanceClient.from_store()
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect binance")
+        raise typer.Exit(1)
+    try:
+        data = client.workers(algo, account, page)
+    except Exception as e:
+        console.print(f"[red]Error consultando workers:[/red] {e}")
+        raise typer.Exit(1)
+    workers = _as_list(data, "workerDatas", "data")
+    t = Table(title=f"Binance Pool · workers de {account}")
+    t.add_column("Worker", style="bold cyan")
+    t.add_column("Hashrate", justify="right")
+    t.add_column("Último share", justify="right")
+    t.add_column("Estado")
+    for w in workers:
+        t.add_row(
+            str(w.get("workerName", "?")),
+            str(w.get("hashRate", "0")),
+            str(w.get("lastShareTime", "")),
+            "activo" if w.get("status", 1) in (1, "1") else "inactivo",
+        )
+    console.print(t if workers else "[grey50]Sin workers para esa cuenta/algoritmo.[/grey50]")
+
+
+@cloud_app.command("earnings")
+def cloud_earnings(
+    algo: str = typer.Option("sha256d", "--algo", "-a"),
+    account: str = typer.Option(..., "--account"),
+    coin: str = typer.Option("BTC", "--coin"),
+) -> None:
+    """Ganancias de tu cuenta de Binance Pool (solo lectura)."""
+    client = BinanceClient.from_store()
+    if client is None:
+        console.print("[yellow]Sin credenciales.[/yellow] Usa: minerpro cloud connect binance")
+        raise typer.Exit(1)
+    try:
+        data = client.earnings(algo, account, coin)
+    except Exception as e:
+        console.print(f"[red]Error consultando ganancias:[/red] {e}")
+        raise typer.Exit(1)
+    rows = _as_list(data, "accountProfits", "data")
+    t = Table(title=f"Binance Pool · ganancias ({coin})")
+    t.add_column("Inicio", style="bold")
+    t.add_column("Tipo")
+    t.add_column("Ganancia", justify="right")
+    t.add_column("Hashrate", justify="right")
+    for r in rows:
+        t.add_row(
+            str(r.get("time", "")),
+            str(r.get("type", "")),
+            str(r.get("profitAmount", r.get("amount", "0"))),
+            str(r.get("hashRate", "0")),
+        )
+    console.print(t if rows else "[grey50]Sin registros de ganancias.[/grey50]")
 
 
 # --------------------------------------------------------------------------- #

@@ -2,10 +2,13 @@
 """Genera los SVG del README a partir de la salida REAL de los comandos.
 
 Uso:
-    python3 scripts/make_readme_assets.py
+    python scripts/make_readme_assets.py
 
-Escribe assets/terminal-*.svg. No inventa contenido: cada línea viene de ejecutar
-el comando indicado (con NO_COLOR=1 para que el SVG controle los colores).
+Escribe assets/terminal-*.svg. Nada se inventa:
+  · `minerpro demo mine|doctor` → interfaz con datos de EJEMPLO (marcados como DEMO).
+  · `minerpro cloud market`     → mercado EN VIVO de NiceHash (si hay red).
+
+Los comandos se ejecutan con NO_COLOR=1 para que el SVG controle los colores.
 """
 
 from __future__ import annotations
@@ -24,17 +27,26 @@ PAD_X = 22
 PAD_TOP = 58
 PAD_BOTTOM = 22
 TITLE_H = 40
+COLUMNS = 100
 
 CARDS = [
-    ("terminal-doctor.svg", "minerpro doctor", ["minerpro", "doctor"]),
-    ("terminal-coins.svg", "minerpro coins", ["minerpro", "coins"]),
+    ("terminal-mine.svg", "minerpro mine · dashboard en vivo", ["minerpro", "demo", "mine", "--width", str(COLUMNS)]),
+    ("terminal-market.svg", "minerpro cloud market · NiceHash en vivo", ["minerpro", "cloud", "market", "--algo", "SHA256", "--top", "6"]),
+    ("terminal-doctor.svg", "minerpro doctor", ["minerpro", "demo", "doctor", "--width", str(COLUMNS)]),
 ]
 
 
-def run(cmd: list[str]) -> str:
+def run(cmd: list[str]) -> str | None:
     env = dict(os.environ)
-    env.update({"NO_COLOR": "1", "TERM": "dumb", "COLUMNS": "96"})
-    proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
+    env.update({"NO_COLOR": "1", "TERM": "dumb", "COLUMNS": str(COLUMNS)})
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"  ! no pude ejecutar {' '.join(cmd)}: {exc}")
+        return None
+    if proc.returncode != 0:
+        print(f"  ! {' '.join(cmd)} falló (rc={proc.returncode}); se omite")
+        return None
     return (proc.stdout or proc.stderr).rstrip("\n")
 
 
@@ -53,15 +65,14 @@ def color_for(line: str) -> str:
 def build_svg(title: str, body: str) -> str:
     lines = body.splitlines() or [""]
     width_chars = max(len(line) for line in lines)
-    width = int(PAD_X * 2 + width_chars * CHAR_W)
-    width = max(680, min(width, 1080))
+    width = int(PAD_X * 2 + width_chars * CHAR_W) + 4
     height = PAD_TOP + len(lines) * LINE_H + PAD_BOTTOM
 
     parts: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" font-family="ui-monospace, SFMono-Regular, '
         f'Menlo, Consolas, monospace">',
-        '<defs>',
+        "<defs>",
         '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">',
         '<stop offset="0%" stop-color="#111214"/><stop offset="100%" stop-color="#0b0c0d"/>',
         "</linearGradient>",
@@ -79,9 +90,8 @@ def build_svg(title: str, body: str) -> str:
     ]
     for i, line in enumerate(lines):
         y = PAD_TOP + i * LINE_H
-        color = color_for(line)
         parts.append(
-            f'<text x="{PAD_X}" y="{y}" fill="{color}" font-size="13" '
+            f'<text x="{PAD_X}" y="{y}" fill="{color_for(line)}" font-size="13" '
             f'xml:space="preserve">{html.escape(line)}</text>'
         )
     parts.append("</svg>")
@@ -92,6 +102,8 @@ def main() -> None:
     ASSETS.mkdir(exist_ok=True)
     for filename, title, cmd in CARDS:
         body = run(cmd)
+        if body is None:
+            continue
         out = ASSETS / filename
         out.write_text(build_svg(title, body))
         print(f"escrito {out.relative_to(ROOT)}  ({len(body.splitlines())} líneas)")
