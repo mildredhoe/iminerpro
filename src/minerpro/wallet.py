@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Validación y utilidades de wallets.
 
 Para Monero se implementa la verificación completa de checksum CryptoNote:

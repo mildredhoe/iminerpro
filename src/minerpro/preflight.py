@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Chequeos previos: que la pool responda, que el puerto esté libre, que el minero corra.
 
 La idea es fallar temprano y con un mensaje útil, en vez de arrancar el minero y

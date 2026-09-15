@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Guardado seguro de credenciales (API keys).
 
 Usa el llavero del sistema si `keyring` está disponible (Keychain en macOS,

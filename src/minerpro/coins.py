@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Modelo de monedas soportadas: XMR (RandomX) y BTC (SHA-256d)."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """TUI de MinerPro (Rich): dashboard de minado con datos reales."""
 
 from __future__ import annotations

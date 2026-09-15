@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Estadísticas reales de pool por wallet (APIs públicas)."""
 
 from __future__ import annotations

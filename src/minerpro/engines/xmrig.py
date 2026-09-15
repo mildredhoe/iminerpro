@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Motor XMRig: descarga verificada, configuración y control por API.
 
 XMRig es software libre de xmrig.com. MinerPro descarga el binario oficial del

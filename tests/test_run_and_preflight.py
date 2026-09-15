@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Tests del estado de ejecución y de los chequeos previos."""
 
 import os

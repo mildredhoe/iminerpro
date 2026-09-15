@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """NiceHash — marketplace de hashrate (nube), API v2.
 
 Autenticación (según el demo oficial nicehash/rest-clients-demo):

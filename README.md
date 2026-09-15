@@ -11,7 +11,7 @@ dinero pasa por tu confirmación.
 <br>
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-3DA639?style=for-the-badge)](#-licencia)
+[![Licencia](https://img.shields.io/badge/Licencia-no%20comercial-f1c40f?style=for-the-badge)](#-licencia-y-uso-comercial)
 [![Tests](https://img.shields.io/badge/tests-53%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
 [![CI](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml)
 [![Estrellas](https://img.shields.io/github/stars/mildredhoe/iminerpro?style=for-the-badge&color=f1c40f)](https://github.com/mildredhoe/iminerpro/stargazers)
@@ -418,9 +418,23 @@ python scripts/make_readme_assets.py
 
 ---
 
-## 📜 Licencia
+## 📜 Licencia y uso comercial
 
-MIT. Ver [`LICENSE`](LICENSE).
+El código es **público pero no revendible**, bajo la
+[PolyForm Noncommercial License 1.0.0](LICENSE).
+
+**Podes, sin pedir permiso:** leerlo, estudiarlo, modificarlo, minar para vos, usarlo para
+aprender o enseñar, y compartirlo manteniendo esta licencia.
+
+**Necesitás permiso escrito del autor para:** venderlo, cobrar por distribuirlo, ofrecerlo como
+servicio (hosting, soporte pago, SaaS) o incluirlo en un producto comercial.
+
+Para uso comercial, escribime y lo hablamos.
+
+> Las versiones publicadas antes del 15 de septiembre de 2026 (cuando el proyecto estaba bajo
+> licencia MIT) siguen siendo MIT para quien ya las haya obtenido. Las versiones nuevas quedan
+> bajo PolyForm Noncommercial.
+
 
 <br>
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Detección de hardware y recomendación de configuración de minado."""
 
 from __future__ import annotations

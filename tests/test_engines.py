@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Tests de motores, planificación y no-ejecución."""
 
 from minerpro.config import Profile

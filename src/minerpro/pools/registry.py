@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Pools de minería reales y sus APIs de estadísticas."""
 
 from __future__ import annotations

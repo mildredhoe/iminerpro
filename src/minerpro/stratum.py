@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Puente entre plataformas y el minero local: arma el destino Stratum.
 
 Así se "empieza a minar" apuntando tu minero a la plataforma (nube/marketplace)

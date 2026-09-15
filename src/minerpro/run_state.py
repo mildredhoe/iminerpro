@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Estado de la ejecución actual: qué minero está corriendo y desde cuándo.
 
 Permite que `status`, `logs` y `stop` funcionen en otra terminal, y que `mine`

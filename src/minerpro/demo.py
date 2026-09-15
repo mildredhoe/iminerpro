@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Datos de ejemplo para mostrar la interfaz sin minar ni usar tu equipo.
 
 Todo lo que sale de aquí está **marcado como DEMO**: son cifras realistas de un

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Catálogo de plataformas de nube/pool. Solo lectura + enlaces, sin pagos automáticos."""
 
 from __future__ import annotations

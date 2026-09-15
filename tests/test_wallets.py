@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Tests de validación de wallets y direcciones."""
 
 from minerpro import btc, coins, wallet

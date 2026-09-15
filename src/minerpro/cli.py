@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """CLI de MinerPro (Typer).
 
 MinerPro deja todo **listo** para minar: valida wallets, elige pool/moneda, genera
@@ -61,6 +62,10 @@ console = Console(width=int(_columns)) if _columns.isdigit() else Console()
 def _version_callback(value: bool) -> None:
     if value:
         console.print(f"MinerPro {__version__}")
+        console.print("[grey50]Fuente oficial: https://github.com/mildredhoe/iminerpro[/grey50]")
+        console.print(
+            "[grey50]Licencia: PolyForm Noncommercial 1.0.0 · el uso comercial requiere permiso[/grey50]"
+        )
         raise typer.Exit()
 
 

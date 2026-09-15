@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Datos de mercado y estimación de rentabilidad, con las mismas cuentas que la app.
 
 Fuentes en vivo (con respaldo):

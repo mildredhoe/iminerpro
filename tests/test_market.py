@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Tests del estimador de rentabilidad y de las fuentes de datos."""
 
 import pytest

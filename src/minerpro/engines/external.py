@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Motor externo: ejecuta un minero que el usuario aporta (BTC/ASIC/GPU).
 
 MinerPro no empaqueta mineros de SHA-256d. Para BTC en local, el usuario conecta

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Rutas, perfiles y configuración persistente de MinerPro."""
 
 from __future__ import annotations

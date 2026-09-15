@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Validación de direcciones Bitcoin (base58check y bech32/bech32m)."""
 
 from __future__ import annotations

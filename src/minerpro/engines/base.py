@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Interfaz común de motores de minado."""
 
 from __future__ import annotations

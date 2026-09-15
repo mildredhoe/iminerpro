@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 """Binance Pool / Binance Cloud Mining — API firmada (HMAC-SHA256).
 
 Firma (estilo Binance): se firma el query string exacto con HMAC-SHA256(secret) y
