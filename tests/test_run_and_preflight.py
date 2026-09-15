@@ -47,6 +47,14 @@ class TestRunState:
         assert run_state.current() is None
         assert run_state.load() is None
 
+    def test_marcador_de_parada(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("MINERPRO_HOME", str(tmp_path))
+        assert run_state.stop_requested() is False
+        run_state.request_stop()
+        assert run_state.stop_requested() is True
+        run_state.clear()
+        assert run_state.stop_requested() is False
+
     def test_archivo_corrupto_no_rompe(self, tmp_path, monkeypatch):
         monkeypatch.setenv("MINERPRO_HOME", str(tmp_path))
         run_state.state_path().write_text("{no es json")

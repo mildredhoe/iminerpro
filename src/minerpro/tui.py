@@ -156,6 +156,7 @@ def run(
     *,
     refresh: float = 1.0,
     console: Console | None = None,
+    should_stop=None,
 ) -> None:
     """Dashboard en vivo. Sale con Ctrl+C deteniendo el minero."""
     console = console or Console()
@@ -176,6 +177,9 @@ def run(
                     pool_state = pool_stats.fetch(pool, wallet)
                     last_pool_fetch = now
                 live.update(render(stats))
+                if should_stop is not None and should_stop():
+                    console.print("[yellow]Parada pedida.[/yellow]")
+                    break
                 if not engine.is_running:
                     console.print("[yellow]El minero terminó.[/yellow]")
                     break

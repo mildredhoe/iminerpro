@@ -981,13 +981,23 @@ def mine(
                 if deadline and time.time() > deadline:
                     stop_requested["value"] = True
                     break
+                if run_state.stop_requested():
+                    stop_requested["value"] = True
+                    break
                 time.sleep(5)
         else:
             if seconds:
                 import threading
 
                 threading.Timer(seconds, on_interrupt, args=(0, None)).start()
-            tui.run(engine, prof.name, pool, wallet_addr, console=console)
+            tui.run(
+                engine,
+                prof.name,
+                pool,
+                wallet_addr,
+                console=console,
+                should_stop=lambda: run_state.stop_requested() or stop_requested["value"],
+            )
 
     try:
         while True:
@@ -1126,16 +1136,20 @@ def stop() -> None:
     if st is None:
         console.print("[yellow]No hay ningún minero corriendo.[/yellow]")
         raise typer.Exit(1)
-    try:
-        os.kill(st.pid, signal.SIGINT)
-    except OSError as e:
-        console.print(f"[red]No pude avisarle al proceso:[/red] {e}")
-    for _ in range(40):
+    run_state.request_stop()
+    for _ in range(60):
         if run_state.current() is None:
             console.print("[green]✓[/green] Minero detenido.")
             return
         time.sleep(0.25)
-    console.print("[yellow]No se detuvo a tiempo; revisá el proceso.[/yellow]")
+    console.print("[yellow]No se detuvo solo; lo termino a la fuerza.[/yellow]")
+    run_state._terminate(st.pid)
+    for _ in range(20):
+        if run_state.current() is None:
+            console.print("[green]✓[/green] Minero detenido.")
+            return
+        time.sleep(0.25)
+    console.print("[red]No pude detenerlo.[/red] Revisá el proceso a mano.")
     raise typer.Exit(1)
 
 

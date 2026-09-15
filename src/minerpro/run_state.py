@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -23,6 +24,21 @@ def run_dir() -> Path:
 
 def state_path() -> Path:
     return run_dir() / "state.json"
+
+
+def stop_marker() -> Path:
+    """Archivo que pide parar. Es portable: en Windows no se puede "avisar" con señales."""
+    return run_dir() / "stop.request"
+
+
+def request_stop() -> Path:
+    path = stop_marker()
+    path.write_text("stop")
+    return path
+
+
+def stop_requested() -> bool:
+    return stop_marker().exists()
 
 
 @dataclass
@@ -49,8 +65,23 @@ class RunState:
 
 
 def _pid_alive(pid: int) -> bool:
+    """¿Sigue vivo el proceso?
+
+    En Windows NO se puede usar os.kill(pid, 0): la llamada termina el proceso
+    (TerminateProcess). Ahí se consulta con OpenProcess.
+    """
     if pid <= 0:
         return False
+    if os.name == "nt":
+        import ctypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return False
+        kernel32.CloseHandle(handle)
+        return True
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -58,6 +89,16 @@ def _pid_alive(pid: int) -> bool:
     except PermissionError:
         return True
     return True
+
+
+def _terminate(pid: int) -> None:
+    """Terminación forzada, solo si la parada pedida no alcanzó."""
+    if os.name == "nt":
+        import subprocess
+
+        subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, check=False)
+        return
+    os.kill(pid, signal.SIGTERM)
 
 
 def save(state: RunState) -> Path:
@@ -85,12 +126,12 @@ def load() -> RunState | None:
 
 
 def clear() -> None:
-    path = state_path()
-    if path.exists():
-        try:
-            path.unlink()
-        except OSError:
-            pass
+    for path in (state_path(), stop_marker()):
+        if path.exists():
+            try:
+                path.unlink()
+            except OSError:
+                pass
 
 
 def current() -> RunState | None:
