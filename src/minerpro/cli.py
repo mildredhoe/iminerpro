@@ -835,6 +835,10 @@ def mine(
     daemon: bool = typer.Option(False, "--daemon", help="Minar en segundo plano y devolver el terminal"),
 ) -> None:
     """Minar de verdad contra una pool (BTC o XMR). Usa --dry-run para no ejecutar."""
+    console.print(
+        "[grey50]iminerpro oficial · https://github.com/mildredhoe/iminerpro · licencia no comercial[/grey50]"
+    )
+
     c = coins.get(coin)
     ok, detail, kind = coins.validate_address(c.symbol, wallet_addr)
     if not ok:
