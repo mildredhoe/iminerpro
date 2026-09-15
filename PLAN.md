@@ -51,7 +51,13 @@ Regla: **MinerPro no mina solo**. Nunca arranca en segundo plano ni al instalar.
 - `config.py` — perfiles + carga de `.env` (cwd y `~/.minerpro/.env`).
 - `tui.py` — dashboard Rich con datos reales.
 - `cli.py` — comandos: `doctor`, `coins`, `pools`, `wallet`, `install`, `plan`,
-  `poolstats`, `cloud ...`, `mine [--dry-run]`.
+  `poolstats`, `estimate`, `status`, `logs`, `stop`, `cloud ...`, `mine [--dry-run]`.
+- `run_state.py` — estado del minero en curso (`~/.minerpro/run/state.json`) para que
+  `status`, `logs` y `stop` funcionen desde otra terminal.
+- `preflight.py` — chequeos previos: minero ejecutable, puerto de la API libre, pool
+  alcanzable. Falla temprano y con mensaje útil.
+- `market.py` — red de Monero (moneroblocks, blockchair, xmrchain), precios (CoinGecko) y
+  mercado de NiceHash, con la misma matemática de rentabilidad que la app.
 
 ### 2.2 Qué significa "nube" aquí (real y honesto)
 1. **Plataformas conectables por API**, en dos niveles:

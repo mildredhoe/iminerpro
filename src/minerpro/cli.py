@@ -9,18 +9,21 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import sys
 import time
+from pathlib import Path
 from typing import Optional
 
+import httpx
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, coins, hardware, secrets, stratum, tui
+from . import __version__, coins, hardware, market, preflight, run_state, secrets, stratum, tui
 from . import demo as demo_mod
-from .config import Profile, load_env
+from .config import Profile, load_env, logs_dir
 from .engines.external import ExternalEngine
 from .engines.xmrig import DEFAULT_HTTP_PORT, XmrigEngine
 from .platforms import all_platforms
@@ -191,8 +194,8 @@ def poolstats(
     t.add_row("Pool", s.pool)
     t.add_row("Hashrate reportado", tui.fmt_hashrate(s.hashrate))
     t.add_row("Shares", f"{s.accepted} ok / {s.rejected} rechazados")
-    t.add_row("Pendiente", f"{s.pending_xmr:.8f} XMR")
-    t.add_row("Pagado", f"{s.paid_xmr:.8f} XMR")
+    t.add_row("Pendiente", f"{s.pending_xmr:.8f} {s.coin}")
+    t.add_row("Pagado", f"{s.paid_xmr:.8f} {s.coin}")
     console.print(Panel(t, title="Stats reales de la pool", border_style="yellow"))
 
 
@@ -798,6 +801,7 @@ def mine(
     seconds: Optional[int] = typer.Option(None, "--seconds", help="Detener tras N segundos"),
     plain: bool = typer.Option(False, "--plain", help="Sin TUI: solo logs"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Solo muestra el plan, no ejecuta nada"),
+    restart: bool = typer.Option(False, "--restart", help="Reiniciar el minero si se cae solo"),
 ) -> None:
     """Minar de verdad contra una pool (BTC o XMR). Usa --dry-run para no ejecutar."""
     c = coins.get(coin)
@@ -841,8 +845,52 @@ def mine(
         engine.prepare()
         console.print(f"[green]✓[/green] Minero externo: {engine.preview()}")
 
+    # Chequeos previos: mejor fallar aquí que descubrirlo mirando el log.
+    binary = getattr(engine, "binary", None)
+    checks = [
+        preflight.check_binary(binary),
+        preflight.check_port_free(port),
+        preflight.check_pool(pool.url),
+    ]
+    for ch in checks:
+        style = "green" if ch.ok else ("red" if ch.fatal else "yellow")
+        console.print(f"  [{style}]{ch.mark}[/{style}] {ch.name}: {ch.detail}")
+    can_continue, _ = preflight.run_all(checks)
+    if not can_continue:
+        console.print("[red]Hay un problema que impide minar.[/red]")
+        raise typer.Exit(3)
+
+    if run_state.current() is not None:
+        console.print("[yellow]Ya hay un minero corriendo.[/yellow] Usa minerpro status o minerpro stop.")
+        raise typer.Exit(4)
+
     engine.start()
-    try:
+    state = run_state.RunState(
+        pid=os.getpid(),
+        profile=prof.name,
+        coin=c.symbol,
+        pool=pool.url,
+        wallet=wallet_addr,
+        engine=engine.name,
+        port=port,
+        started_at=time.time(),
+        log_path=str(getattr(engine, "_log_path", "")),
+        binary=str(binary or ""),
+    )
+    run_state.save(state)
+
+    stop_requested = {"value": False, "signal": False}
+    previous_handler = signal.getsignal(signal.SIGINT)
+
+    def on_interrupt(signum, frame):
+        stop_requested["value"] = True
+        stop_requested["signal"] = True
+        engine.stop()
+
+    signal.signal(signal.SIGINT, on_interrupt)
+
+    def session() -> None:
+        """Una corrida: espera la API y muestra el dashboard o los logs."""
         for _ in range(20):
             if engine.stats().raw:
                 break
@@ -858,16 +906,33 @@ def mine(
                     f"uptime {tui.fmt_duration(s.uptime_s)}"
                 )
                 if deadline and time.time() > deadline:
+                    stop_requested["value"] = True
                     break
                 time.sleep(5)
         else:
             if seconds:
                 import threading
 
-                threading.Timer(seconds, engine.stop).start()
+                threading.Timer(seconds, on_interrupt, args=(0, None)).start()
             tui.run(engine, prof.name, pool, wallet_addr, console=console)
+
+    try:
+        while True:
+            session()
+            if stop_requested["value"] or not restart:
+                break
+            state.restarts += 1
+            run_state.save(state)
+            wait = min(30, 3 * state.restarts)
+            console.print(f"[yellow]El minero se detuvo. Reinicio {state.restarts} en {wait}s.[/yellow]")
+            time.sleep(wait)
+            engine.start()
+    except KeyboardInterrupt:
+        stop_requested["value"] = True
     finally:
+        signal.signal(signal.SIGINT, previous_handler)
         engine.stop()
+        run_state.clear()
         s = engine.stats()
         console.print(
             f"[bold]Resumen:[/bold] {tui.fmt_hashrate(s.hashrate_max)} pico · "
@@ -880,6 +945,212 @@ def mine(
                     f"[grey50]Pool: {ps.accepted} aceptados · pendiente "
                     f"{ps.pending_xmr:.8f}[/grey50]"
                 )
+
+
+
+# --------------------------------------------------------------------------- #
+# Control del minero en curso (funciona desde otra terminal)
+# --------------------------------------------------------------------------- #
+def _read_local_api(port: int, timeout: float = 2.0) -> dict | None:
+    try:
+        r = httpx.get(f"http://127.0.0.1:{port}/1/summary", timeout=timeout)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        return None
+    return None
+
+
+@app.command()
+def status() -> None:
+    """Qué está minando ahora mismo, con datos de la API local del minero."""
+    st = run_state.current()
+    if st is None:
+        console.print("[yellow]No hay ningún minero corriendo.[/yellow]")
+        console.print("[grey50]Arrancá uno con: minerpro mine -c XMR -w <tu_wallet>[/grey50]")
+        raise typer.Exit(1)
+
+    t = Table.grid(padding=(0, 2))
+    t.add_column(style="grey50", justify="right")
+    t.add_column(style="bold")
+    t.add_row("Perfil", st.profile)
+    t.add_row("Moneda", st.coin)
+    t.add_row("Pool", st.pool)
+    t.add_row("Motor", st.engine)
+    t.add_row("PID", str(st.pid), )
+    t.add_row("Uptime", tui.fmt_duration(st.uptime_seconds))
+    if st.restarts:
+        t.add_row("Reinicios", str(st.restarts))
+    t.add_row("Log", st.log_path or "—")
+
+    data = _read_local_api(st.port)
+    if data:
+        hr = (data.get("hashrate") or {}).get("total") or [0, 0, 0]
+        res = data.get("results") or {}
+        conn = data.get("connection") or {}
+        t.add_row("Hashrate", tui.fmt_hashrate(float(hr[0] or 0)))
+        t.add_row("Shares", f"{res.get('shares_good', 0)} ok / {res.get('shares_total', 0) - res.get('shares_good', 0)} rechazados")
+        t.add_row("Conexión", str(conn.get("pool", "")) or "—")
+    console.print(Panel(t, title="Minero en curso", border_style="green"))
+    if not data:
+        console.print(
+            "[grey50]No pude leer la API local. Si es un minero externo (ASIC), es normal: "
+            "revisá el log con minerpro logs -f[/grey50]"
+        )
+
+
+@app.command()
+def logs(
+    lines: int = typer.Option(40, "--lines", "-n", help="Cuántas líneas mostrar"),
+    follow: bool = typer.Option(False, "--follow", "-f", help="Seguir el log en vivo"),
+) -> None:
+    """Muestra el log del minero (el de la corrida actual o el último que hubo)."""
+    st = run_state.load()
+    path: Path | None = Path(st.log_path) if st and st.log_path else None
+    if path is None or not path.exists():
+        candidates = sorted(logs_dir().glob("*.log"), key=lambda q: q.stat().st_mtime, reverse=True)
+        path = candidates[0] if candidates else None
+    if path is None or not path.exists():
+        console.print("[yellow]Todavía no hay logs.[/yellow]")
+        raise typer.Exit(1)
+
+    console.print(f"[grey50]{path}[/grey50]")
+    if not follow:
+        with path.open("r", errors="replace") as f:
+            for line in f.readlines()[-lines:]:
+                _print_log_line(line.rstrip("\n"))
+        return
+    console.print("[grey50]Ctrl+C para salir[/grey50]")
+    try:
+        with path.open("r", errors="replace") as f:
+            f.seek(0, os.SEEK_END)
+            while True:
+                line = f.readline()
+                if line:
+                    _print_log_line(line.rstrip("\n"))
+                else:
+                    time.sleep(0.4)
+    except KeyboardInterrupt:
+        return
+
+
+def _print_log_line(line: str) -> None:
+    style = "grey62"
+    low = line.lower()
+    if "accepted" in low:
+        style = "green"
+    elif "rejected" in low or "error" in low:
+        style = "red"
+    elif "new job" in low or "use " in low:
+        style = "cyan"
+    console.print(line, style=style, highlight=False)
+
+
+@app.command()
+def stop() -> None:
+    """Detiene el minero que está corriendo (parada limpia)."""
+    st = run_state.current()
+    if st is None:
+        console.print("[yellow]No hay ningún minero corriendo.[/yellow]")
+        raise typer.Exit(1)
+    try:
+        os.kill(st.pid, signal.SIGINT)
+    except OSError as e:
+        console.print(f"[red]No pude avisarle al proceso:[/red] {e}")
+    for _ in range(40):
+        if run_state.current() is None:
+            console.print("[green]✓[/green] Minero detenido.")
+            return
+        time.sleep(0.25)
+    console.print("[yellow]No se detuvo a tiempo; revisá el proceso.[/yellow]")
+    raise typer.Exit(1)
+
+
+# --------------------------------------------------------------------------- #
+# Rentabilidad
+# --------------------------------------------------------------------------- #
+@app.command()
+def estimate(
+    coin: str = typer.Option("XMR", "--coin", "-c", help="Moneda a minar"),
+    algo: str = typer.Option("RANDOMXMONERO", "--algo", "-a", help="Algoritmo en NiceHash"),
+    speed: Optional[float] = typer.Option(None, "--speed", "-s", help="Velocidad a arrendar (unidades de mercado)"),
+    days: float = typer.Option(1.0, "--days", "-d", help="Días de arriendo"),
+    price: Optional[float] = typer.Option(None, "--price", help="Precio en BTC por unidad y día (por defecto, el mejor del mercado)"),
+    fee: float = typer.Option(0.6, "--fee", help="Fee de la pool en porcentaje"),
+    hashrate: Optional[float] = typer.Option(None, "--hashrate", help="H/s de tu propio equipo (modo local)"),
+    watts: Optional[float] = typer.Option(None, "--watts", help="Consumo del equipo en watts (modo local)"),
+    kwh: float = typer.Option(0.15, "--kwh", help="Precio del kWh en USD (modo local)"),
+) -> None:
+    """Cuánto costaría y cuánto se esperaría ganar, con datos en vivo."""
+    price_data = market.fetch_prices()
+    net = market.fetch_network()
+    reward = net.block_reward
+
+    if hashrate is not None:
+        # Modo local: no se arrienda nada, se paga electricidad.
+        if reward is None:
+            console.print(f"[red]La fuente {net.source} no informa la recompensa de bloque.[/red]")
+            raise typer.Exit(1)
+        share = hashrate / net.hashrate_hps
+        coins = share * reward * net.blocks_per_day * days * (1 - fee / 100.0)
+        revenue = coins * price_data.coin_usd
+        cost = 0.0
+        if watts:
+            cost = (watts / 1000.0) * 24.0 * days * kwh
+        t = Table.grid(padding=(0, 2))
+        t.add_column(style="grey50", justify="right")
+        t.add_column(style="bold")
+        t.add_row("Modo", "local (tu equipo)")
+        t.add_row("Hashrate", market.format_hashrate(hashrate))
+        t.add_row("Cuota de red", f"{share * 100:.5f}%")
+        t.add_row(f"{coin} esperados", f"{coins:.6f}")
+        t.add_row("Ingreso", f"${revenue:,.2f} USD")
+        if watts:
+            t.add_row("Electricidad", f"${cost:,.2f} USD ({watts:.0f} W a ${kwh:.3f}/kWh)")
+            t.add_row("Neto", f"${revenue - cost:,.2f} USD")
+        t.add_row("Datos", f"red: {net.source} · precio: {price_data.source}")
+        console.print(Panel(t, title="Estimación de minado local", border_style="cyan"))
+        console.print("[grey50]Es una estimación con datos reales, no una promesa.[/grey50]")
+        return
+
+    # Modo nube: se arrienda hashrate.
+    if speed is None:
+        console.print("[red]Falta --speed[/red] (unidades de mercado, por ejemplo GH/s) o usá --hashrate para modo local.")
+        raise typer.Exit(2)
+    units = market.nicehash_algorithm(algo)
+    factor = float(units["marketFactor"])
+    orders = 0
+    chosen = price
+    if chosen is None:
+        chosen, orders = market.nicehash_best_price(algo)
+    if reward is None:
+        console.print(f"[red]La fuente {net.source} no informa la recompensa de bloque.[/red]")
+        raise typer.Exit(1)
+
+    est = market.estimate(speed, chosen, days, fee, factor, net, price_data, reward)
+    t = Table.grid(padding=(0, 2))
+    t.add_column(style="grey50", justify="right")
+    t.add_column(style="bold")
+    t.add_row("Modo", "nube (hashrate arrendado)")
+    t.add_row("Algoritmo", f"{algo.upper()} · unidad de mercado: {units.get('displayMarketFactor')}")
+    t.add_row("Velocidad", f"{speed:g} unidades ({market.format_hashrate(est.speed_hps)})")
+    t.add_row("Precio usado", f"{chosen:.8f} BTC por unidad y día" + (f" (mejor de {orders} órdenes)" if orders else ""))
+    t.add_row("Días", f"{days:g}")
+    t.add_row("Cuota de red", f"{est.network_share * 100:.5f}%")
+    t.add_row(f"{coin} esperados", f"{est.coins_mined:.6f}")
+    t.add_row("Costo", f"${est.cost_usd:,.2f} USD ({est.cost_btc:.8f} BTC)")
+    t.add_row("Ingreso", f"${est.revenue_usd:,.2f} USD")
+    console.print(Panel(t, title="Estimación de arriendo", border_style="cyan"))
+    verdict = "rentable" if est.profitable else "a pérdida"
+    style = "green" if est.profitable else "red"
+    console.print(
+        f"[bold]Neto:[/bold] [{style}]${est.net_usd:,.2f} USD ({verdict})[/{style}] · "
+        f"precio de equilibrio {est.break_even_btc_per_unit_day:.8f} BTC"
+    )
+    console.print(
+        f"[grey50]Datos: red {est.network_source} · precios {est.price_source} · "
+        "la dificultad y el precio cambian, y la suerte del pool también.[/grey50]"
+    )
 
 
 def main() -> None:

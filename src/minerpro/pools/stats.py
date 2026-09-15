@@ -9,12 +9,14 @@ import httpx
 from .registry import Pool
 
 PICONERO = 1e12
+SATOSHI = 1e8
 
 
 @dataclass
 class PoolStats:
     ok: bool
     pool: str = ""
+    coin: str = "XMR"
     hashrate: float = 0.0
     accepted: int = 0
     rejected: int = 0
@@ -42,21 +44,30 @@ def fetch(pool: Pool, wallet: str, timeout: float = 10.0) -> PoolStats:
     if not pool.stats_api:
         return PoolStats(ok=False, pool=pool.name, error="esta pool no expone API de stats")
     url = pool.stats_api.format(wallet=wallet)
+    divisor = PICONERO if pool.coin.upper() == "XMR" else SATOSHI
     try:
         r = httpx.get(url, timeout=timeout, headers={"User-Agent": "MinerPro/0.1"})
         if r.status_code != 200:
-            return PoolStats(ok=False, pool=pool.name, error=f"HTTP {r.status_code}")
+            return PoolStats(ok=False, pool=pool.name, coin=pool.coin, error=f"HTTP {r.status_code}")
         d = r.json()
+    except ValueError:
+        return PoolStats(
+            ok=False,
+            pool=pool.name,
+            coin=pool.coin,
+            error="esta pool no entrega JSON en su API de stats",
+        )
     except Exception as e:
-        return PoolStats(ok=False, pool=pool.name, error=f"{type(e).__name__}: {e}")
+        return PoolStats(ok=False, pool=pool.name, coin=pool.coin, error=f"{type(e).__name__}: {e}")
 
     return PoolStats(
         ok=True,
         pool=pool.name,
+        coin=pool.coin,
         hashrate=_f(d, "hash", "hashrate", "hashRate"),
         accepted=_i(d, "validShares", "valid_shares", "accepted"),
         rejected=_i(d, "invalidShares", "invalid_shares", "rejected"),
-        pending_xmr=_f(d, "amtDue", "pending", "balance") / PICONERO,
-        paid_xmr=_f(d, "amtPaid", "paid", "totalPaid") / PICONERO,
+        pending_xmr=_f(d, "amtDue", "pending", "balance") / divisor,
+        paid_xmr=_f(d, "amtPaid", "paid", "totalPaid") / divisor,
         raw=d,
     )

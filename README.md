@@ -12,7 +12,7 @@ dinero pasa por tu confirmación.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-3DA639?style=for-the-badge)](#-licencia)
-[![Tests](https://img.shields.io/badge/tests-29%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
+[![Tests](https://img.shields.io/badge/tests-53%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
 [![CI](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml)
 [![Estrellas](https://img.shields.io/github/stars/mildredhoe/iminerpro?style=for-the-badge&color=f1c40f)](https://github.com/mildredhoe/iminerpro/stargazers)
 
@@ -201,6 +201,25 @@ minerpro cloud buy -a SHA256 --market EU --price 0.0001 --amount 0.001 \
 
 ---
 
+## ⌨️ Flujo recomendado en terminal
+
+```bash
+minerpro doctor                      # ¿qué tengo y qué mineros hay?
+minerpro estimate --hashrate 14000 --watts 95   # ¿me conviene minar aquí?
+minerpro estimate --speed 1 --days 1            # ¿y arrendar 1 GH/s?
+minerpro mine -c XMR -w <tu_xmr> --restart      # minar, con reinicio si se cae
+# en otra terminal:
+minerpro status                      # PID, hashrate, shares, uptime
+minerpro logs -f                     # ver el log en vivo
+minerpro stop                        # parar limpio
+```
+
+`mine` corre chequeos antes de arrancar (minero ejecutable, puerto libre, pool alcanzable) y
+avisa si algo está mal en vez de fallar en silencio. El estado queda en `~/.minerpro/run/`,
+así que `status`, `logs` y `stop` funcionan desde otra terminal.
+
+---
+
 ## 🧰 Comandos
 
 ### Locales
@@ -215,8 +234,13 @@ minerpro cloud buy -a SHA256 --market EU --price 0.0001 --amount 0.001 \
 | `minerpro install` | Descarga y verifica XMRig (SHA-256) | No |
 | `minerpro plan -c XMR -w <dir>` | Explica exactamente qué haría | No |
 | `minerpro poolstats -w <dir> -p <pool>` | Balance real reportado por la pool | No |
+| `minerpro estimate --speed 1` | Costo y ganancia esperada de arrendar cómputo (datos en vivo) | No |
+| `minerpro estimate --hashrate 14000 --watts 95` | Ganancia de minar en tu equipo, con el costo de luz | No |
+| `minerpro status` | Qué está minando ahora: PID, uptime, hashrate y shares | No |
+| `minerpro logs [-f]` | Log del minero, y con `-f` lo sigue en vivo | No |
+| `minerpro stop` | Parada limpia del minero en curso | No |
 | `minerpro mine ... --dry-run` | Muestra el plan y no ejecuta nada | No |
-| **`minerpro mine ...`** | **Arranca el minado real** | **Sí** |
+| **`minerpro mine ...`** | **Arranca el minado real** (con chequeos previos y `--restart` opcional) | **Sí** |
 
 ### Plataformas
 
@@ -306,7 +330,7 @@ iminerpro/
 ├── docs/plataformas.md   # cómo obtener y colocar las API keys
 ├── scripts/              # generación de los SVG del README
 ├── assets/               # banner y capturas
-└── tests/                # 29 tests
+└── tests/                # 53 tests
 ```
 
 ---
@@ -383,7 +407,7 @@ usa una pool solo (lotería) o compra hashrate en la nube.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]"
-pytest -q                 # 29 tests
+pytest -q                 # 53 tests
 ruff check src tests      # lint
 
 # regenerar los SVG del README desde la salida real
