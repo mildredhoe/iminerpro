@@ -25,14 +25,16 @@ DEMO_HARDWARE = {
     "logical_cores": 32,
     "memory_gb": 32.0,
     "recommended_threads": 16,
+    "gpu": "NVIDIA GeForce RTX 3070 (no usada con RandomX)",
     "notes": [
         "RandomX rinde mejor usando los núcleos físicos completos",
         "En laptops, XMRig con 'pause-on-battery' evita drenar la batería",
+        "MinerPro puede descargar y verificar XMRig por ti",
     ],
 }
 
 DEMO_MINERS = [
-    ("xmrig", "6.26.0 (verificado SHA-256)"),
+    ("xmrig", "6.26.0 · verificado (SHA-256)"),
     ("mxmr", "no instalado"),
     ("cgminer", "no instalado"),
     ("bfgminer", "no instalado"),
@@ -112,6 +114,7 @@ def hardware_text(width: int = 100) -> str:
         f"{DEMO_HARDWARE['physical_cores']} físicos / {DEMO_HARDWARE['logical_cores']} lógicos",
     )
     t.add_row("RAM", f"{DEMO_HARDWARE['memory_gb']} GB")
+    t.add_row("GPU", DEMO_HARDWARE["gpu"])
     t.add_row("Hilos recomendados (XMR)", str(DEMO_HARDWARE["recommended_threads"]))
     panel = Panel(t, title="Hardware detectado", border_style="cyan")
 
@@ -125,16 +128,18 @@ def hardware_text(width: int = 100) -> str:
     console = _demo_console(width)
     console.print(panel)
     console.print(miners)
+    console.print("[grey50]Secrets guardados en: keyring (Keychain / DPAPI / Secret Service)[/grey50]")
     for note in DEMO_HARDWARE["notes"]:
         console.print(f"[grey50]· {note}[/grey50]")
     return console.export_text().rstrip("\n")
 
 
-def to_stdout(panel: str = "mine", width: int = 100) -> str:
-    """Texto completo para el README: aviso DEMO + panel pedido."""
-    if panel == "doctor":
-        return f"⚠ {DEMO_NOTICE}\n\n" + hardware_text(width)
-    return f"⚠ {DEMO_NOTICE}\n\n" + dashboard_text(width)
+def to_stdout(panel: str = "mine", width: int = 100, notice: bool = True) -> str:
+    """Texto completo para la terminal o el README."""
+    body = hardware_text(width) if panel == "doctor" else dashboard_text(width)
+    if not notice:
+        return body
+    return f"⚠ {DEMO_NOTICE}\n\n" + body
 
 
 def _main() -> None:  # pragma: no cover - utilidad manual

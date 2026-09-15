@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="888" height="420" viewBox="0 0 888 420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" width="888" height="440" viewBox="0 0 888 440" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0%" stop-color="#111214"/><stop offset="100%" stop-color="#0b0c0d"/>
 </linearGradient>
 </defs>
-<rect x="0.5" y="0.5" width="887" height="419" rx="12" fill="url(#bg)" stroke="#26282c"/>
+<rect x="0.5" y="0.5" width="887" height="439" rx="12" fill="url(#bg)" stroke="#26282c"/>
 <rect x="0.5" y="0.5" width="887" height="40" rx="12" fill="#16181b"/>
 <rect x="0.5" y="28" width="887" height="12" fill="#16181b"/>
 <line x1="0" y1="40" x2="888" y2="40" stroke="#26282c"/>
@@ -12,21 +12,22 @@
 <circle cx="46" cy="20" r="6" fill="#febc2e"/>
 <circle cx="68" cy="20" r="6" fill="#28c840"/>
 <text x="444.0" y="25" fill="#9aa0a6" font-size="13" text-anchor="middle">minerpro doctor</text>
-<text x="22" y="58" fill="#8be9fd" font-size="13" xml:space="preserve">⚠ DEMO · datos de ejemplo (no es tu equipo ni tu wallet)</text>
-<text x="22" y="78" fill="#e6e6e6" font-size="13" xml:space="preserve"></text>
-<text x="22" y="98" fill="#e6e6e6" font-size="13" xml:space="preserve">╭─────────────────────────────────────── Hardware detectado ───────────────────────────────────────╮</text>
-<text x="22" y="118" fill="#c8c8c8" font-size="13" xml:space="preserve">│                  Sistema  Linux x86_64                                                           │</text>
-<text x="22" y="138" fill="#c8c8c8" font-size="13" xml:space="preserve">│                      CPU  AMD Ryzen 9 5950X 16-Core Processor                                    │</text>
-<text x="22" y="158" fill="#c8c8c8" font-size="13" xml:space="preserve">│                  Núcleos  16 físicos / 32 lógicos                                                │</text>
-<text x="22" y="178" fill="#c8c8c8" font-size="13" xml:space="preserve">│                      RAM  32.0 GB                                                                │</text>
-<text x="22" y="198" fill="#c8c8c8" font-size="13" xml:space="preserve">│ Hilos recomendados (XMR)  16                                                                     │</text>
-<text x="22" y="218" fill="#e6e6e6" font-size="13" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
-<text x="22" y="238" fill="#e6e6e6" font-size="13" xml:space="preserve">╭─────────────────────────────────────── Mineros detectados ───────────────────────────────────────╮</text>
-<text x="22" y="258" fill="#c8c8c8" font-size="13" xml:space="preserve">│ xmrig:     6.26.0 (verificado SHA-256)                                                           │</text>
-<text x="22" y="278" fill="#c8c8c8" font-size="13" xml:space="preserve">│ mxmr:      no instalado                                                                          │</text>
-<text x="22" y="298" fill="#c8c8c8" font-size="13" xml:space="preserve">│ cgminer:   no instalado                                                                          │</text>
-<text x="22" y="318" fill="#c8c8c8" font-size="13" xml:space="preserve">│ bfgminer:  no instalado                                                                          │</text>
-<text x="22" y="338" fill="#e6e6e6" font-size="13" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
+<text x="22" y="58" fill="#e6e6e6" font-size="13" xml:space="preserve">╭─────────────────────────────────────── Hardware detectado ───────────────────────────────────────╮</text>
+<text x="22" y="78" fill="#c8c8c8" font-size="13" xml:space="preserve">│                  Sistema  Linux x86_64                                                           │</text>
+<text x="22" y="98" fill="#c8c8c8" font-size="13" xml:space="preserve">│                      CPU  AMD Ryzen 9 5950X 16-Core Processor                                    │</text>
+<text x="22" y="118" fill="#c8c8c8" font-size="13" xml:space="preserve">│                  Núcleos  16 físicos / 32 lógicos                                                │</text>
+<text x="22" y="138" fill="#c8c8c8" font-size="13" xml:space="preserve">│                      RAM  32.0 GB                                                                │</text>
+<text x="22" y="158" fill="#c8c8c8" font-size="13" xml:space="preserve">│                      GPU  NVIDIA GeForce RTX 3070 (no usada con RandomX)                         │</text>
+<text x="22" y="178" fill="#c8c8c8" font-size="13" xml:space="preserve">│ Hilos recomendados (XMR)  16                                                                     │</text>
+<text x="22" y="198" fill="#e6e6e6" font-size="13" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
+<text x="22" y="218" fill="#e6e6e6" font-size="13" xml:space="preserve">╭─────────────────────────────────────── Mineros detectados ───────────────────────────────────────╮</text>
+<text x="22" y="238" fill="#c8c8c8" font-size="13" xml:space="preserve">│ xmrig:     6.26.0 · verificado (SHA-256)                                                         │</text>
+<text x="22" y="258" fill="#c8c8c8" font-size="13" xml:space="preserve">│ mxmr:      no instalado                                                                          │</text>
+<text x="22" y="278" fill="#c8c8c8" font-size="13" xml:space="preserve">│ cgminer:   no instalado                                                                          │</text>
+<text x="22" y="298" fill="#c8c8c8" font-size="13" xml:space="preserve">│ bfgminer:  no instalado                                                                          │</text>
+<text x="22" y="318" fill="#e6e6e6" font-size="13" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
+<text x="22" y="338" fill="#e6e6e6" font-size="13" xml:space="preserve">Secrets guardados en: keyring (Keychain / DPAPI / Secret Service)</text>
 <text x="22" y="358" fill="#8be9fd" font-size="13" xml:space="preserve">· RandomX rinde mejor usando los núcleos físicos completos</text>
 <text x="22" y="378" fill="#8be9fd" font-size="13" xml:space="preserve">· En laptops, XMRig con &#x27;pause-on-battery&#x27; evita drenar la batería</text>
+<text x="22" y="398" fill="#8be9fd" font-size="13" xml:space="preserve">· MinerPro puede descargar y verificar XMRig por ti</text>
 </svg>

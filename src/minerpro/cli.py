@@ -117,12 +117,14 @@ def coins_cmd() -> None:  # nombre de función distinto para no chocar con el m�
 def demo(
     panel: str = typer.Argument("mine", help="mine (dashboard) o doctor (hardware)"),
     width: int = typer.Option(100, "--width", help="Ancho de la salida"),
+    notice: bool = typer.Option(True, "--notice/--no-notice", help="Mostrar el aviso de datos de ejemplo"),
 ) -> None:
     """Muestra la interfaz con datos de EJEMPLO, sin minar ni tocar tu equipo."""
     if panel not in ("mine", "doctor"):
         console.print("[red]panel inválido: usa 'mine' o 'doctor'[/red]")
         raise typer.Exit(2)
-    console.print(demo_mod.to_stdout(panel, width), markup=False, highlight=False, soft_wrap=True)
+    text = demo_mod.to_stdout(panel, width, notice)
+    console.print(text, markup=False, highlight=False, soft_wrap=True)
 
 
 @app.command("pools")

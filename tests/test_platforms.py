@@ -182,3 +182,11 @@ def test_demo_output_is_labelled_and_does_not_print(capsys):
     assert "13.84 kH/s" in text
     captured = capsys.readouterr()
     assert captured.out == ""  # el modo demo no imprime en stdout por su cuenta
+
+
+def test_demo_notice_can_be_hidden():
+    from minerpro import demo
+
+    assert "DEMO" not in demo.to_stdout("doctor", width=100, notice=False)
+    assert "Hardware detectado" in demo.to_stdout("doctor", width=100, notice=False)
+    assert "DEMO" in demo.to_stdout("doctor", width=100, notice=True)

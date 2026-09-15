@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="888" height="400" viewBox="0 0 888 400" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" width="888" height="460" viewBox="0 0 888 460" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0%" stop-color="#111214"/><stop offset="100%" stop-color="#0b0c0d"/>
 </linearGradient>
 </defs>
-<rect x="0.5" y="0.5" width="887" height="399" rx="12" fill="url(#bg)" stroke="#26282c"/>
+<rect x="0.5" y="0.5" width="887" height="459" rx="12" fill="url(#bg)" stroke="#26282c"/>
 <rect x="0.5" y="0.5" width="887" height="40" rx="12" fill="#16181b"/>
 <rect x="0.5" y="28" width="887" height="12" fill="#16181b"/>
 <line x1="0" y1="40" x2="888" y2="40" stroke="#26282c"/>
@@ -17,15 +17,18 @@
 <text x="22" y="98" fill="#c8c8c8" font-size="13" xml:space="preserve">│        Habilitado  sí                                                                            │</text>
 <text x="22" y="118" fill="#c8c8c8" font-size="13" xml:space="preserve">│ Factor de mercado  EH (1000000000000000000.00000000)                                             │</text>
 <text x="22" y="138" fill="#e6e6e6" font-size="13" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
-<text x="22" y="158" fill="#e6e6e6" font-size="13" xml:space="preserve">Pago actual (unidades de NiceHash): 7.109196353556443e-11</text>
-<text x="22" y="178" fill="#e6e6e6" font-size="13" xml:space="preserve">Velocidad total del algoritmo: 1,157.43</text>
+<text x="22" y="158" fill="#e6e6e6" font-size="13" xml:space="preserve">Pago actual (unidades de NiceHash): 7.106496500810136e-11</text>
+<text x="22" y="178" fill="#e6e6e6" font-size="13" xml:space="preserve">Velocidad total del algoritmo: 1,294.68</text>
 <text x="22" y="198" fill="#e6e6e6" font-size="13" xml:space="preserve">        Órdenes activas con rigs (precio más bajo primero)         </text>
 <text x="22" y="218" fill="#c8c8c8" font-size="13" xml:space="preserve">┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━┓</text>
 <text x="22" y="238" fill="#c8c8c8" font-size="13" xml:space="preserve">┃     Precio ┃ Mercado ┃ Velocidad límite ┃ Velocidad real ┃ Rigs ┃</text>
 <text x="22" y="258" fill="#c8c8c8" font-size="13" xml:space="preserve">┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━┩</text>
-<text x="22" y="278" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71000000 │ BTC     │         0.000400 │       0.000029 │   50 │</text>
-<text x="22" y="298" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71010000 │ BTC     │         0.001000 │       0.001021 │  117 │</text>
-<text x="22" y="318" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71500000 │ BTC     │         0.000200 │       0.000198 │   22 │</text>
-<text x="22" y="338" fill="#c8c8c8" font-size="13" xml:space="preserve">└────────────┴─────────┴──────────────────┴────────────────┴──────┘</text>
-<text x="22" y="358" fill="#e6e6e6" font-size="13" xml:space="preserve">Precio y velocidad van en la unidad de mercado del algoritmo (ver &#x27;Factor de mercado&#x27; arriba).</text>
+<text x="22" y="278" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.69020000 │ BTC     │         0.000100 │       0.000000 │    1 │</text>
+<text x="22" y="298" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.70020000 │ BTC     │         0.000100 │       0.000000 │    5 │</text>
+<text x="22" y="318" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.70050000 │ BTC     │         0.000100 │       0.000000 │   13 │</text>
+<text x="22" y="338" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71000000 │ BTC     │         0.000400 │       0.000079 │   64 │</text>
+<text x="22" y="358" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71010000 │ BTC     │         0.001000 │       0.000961 │   98 │</text>
+<text x="22" y="378" fill="#c8c8c8" font-size="13" xml:space="preserve">│ 0.71500000 │ BTC     │         0.000200 │       0.000120 │   25 │</text>
+<text x="22" y="398" fill="#c8c8c8" font-size="13" xml:space="preserve">└────────────┴─────────┴──────────────────┴────────────────┴──────┘</text>
+<text x="22" y="418" fill="#e6e6e6" font-size="13" xml:space="preserve">Precio y velocidad van en la unidad de mercado del algoritmo (ver &#x27;Factor de mercado&#x27; arriba).</text>
 </svg>

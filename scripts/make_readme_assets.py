@@ -30,9 +30,9 @@ TITLE_H = 40
 COLUMNS = 100
 
 CARDS = [
-    ("terminal-mine.svg", "minerpro mine · dashboard en vivo", ["minerpro", "demo", "mine", "--width", str(COLUMNS)]),
+    ("terminal-mine.svg", "minerpro mine · dashboard en vivo", ["minerpro", "demo", "mine", "--width", str(COLUMNS), "--no-notice"]),
     ("terminal-market.svg", "minerpro cloud market · NiceHash en vivo", ["minerpro", "cloud", "market", "--algo", "SHA256", "--top", "6"]),
-    ("terminal-doctor.svg", "minerpro doctor", ["minerpro", "demo", "doctor", "--width", str(COLUMNS)]),
+    ("terminal-doctor.svg", "minerpro doctor", ["minerpro", "demo", "doctor", "--width", str(COLUMNS), "--no-notice"]),
 ]
 
 

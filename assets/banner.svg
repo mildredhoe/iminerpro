@@ -64,7 +64,7 @@
   </g>
 
   <text x="148" y="256" font-family="ui-sans-serif, -apple-system, Segoe UI, Roboto, sans-serif"
-        font-size="14" fill="#7d8590">No arranca el minado solo · APIs en solo lectura · claves en el llavero</text>
+        font-size="14" fill="#7d8590">Mina local o compra hashrate real · acciones con confirmación · claves en el llavero</text>
 
   <!-- terminal mini -->
   <g transform="translate(848,64)">

@@ -12,7 +12,7 @@ dinero pasa por tu confirmación.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-3DA639?style=for-the-badge)](#-licencia)
-[![Tests](https://img.shields.io/badge/tests-28%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
+[![Tests](https://img.shields.io/badge/tests-29%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
 [![CI](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml)
 [![Estrellas](https://img.shields.io/github/stars/mildredhoe/iminerpro?style=for-the-badge&color=f1c40f)](https://github.com/mildredhoe/iminerpro/stargazers)
 
@@ -80,8 +80,9 @@ No hay números inventados en ninguna pantalla:
 
 <sub>
 Los SVG se generan desde la salida real de los comandos con
-<code>scripts/make_readme_assets.py</code>. El dashboard usa datos de ejemplo marcados
-como <code>DEMO</code>; el mercado se lee de la API pública de NiceHash.
+<code>scripts/make_readme_assets.py</code>. El dashboard y el hardware usan datos
+genéricos de ejemplo (así se ve en un equipo típico); el mercado se lee de la API
+pública de NiceHash en vivo.
 </sub>
 
 </div>
@@ -305,7 +306,7 @@ iminerpro/
 ├── docs/plataformas.md   # cómo obtener y colocar las API keys
 ├── scripts/              # generación de los SVG del README
 ├── assets/               # banner y capturas
-└── tests/                # 28 tests
+└── tests/                # 29 tests
 ```
 
 ---
@@ -382,7 +383,7 @@ usa una pool solo (lotería) o compra hashrate en la nube.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]"
-pytest -q                 # 28 tests
+pytest -q                 # 29 tests
 ruff check src tests      # lint
 
 # regenerar los SVG del README desde la salida real
