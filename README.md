@@ -13,9 +13,9 @@ y el dashboard en vivo. **El minado lo arrancas tú.**
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-3DA639?style=for-the-badge)](#-licencia)
 [![Tests](https://img.shields.io/badge/tests-24%20passing-50fa7b?style=for-the-badge)](#-desarrollo)
-[![CI](https://github.com/alvarosp1/minerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarosp1/minerpro/actions/workflows/ci.yml)
+[![CI](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml/badge.svg)](https://github.com/mildredhoe/iminerpro/actions/workflows/ci.yml)
 [![Plataformas](https://img.shields.io/badge/macOS%20%7C%20Linux%20%7C%20Windows-0b0d0f?style=for-the-badge)](#-inicio-rápido)
-[![Estrellas](https://img.shields.io/github/stars/alvarosp1/minerpro?style=for-the-badge&color=f1c40f)](https://github.com/alvarosp1/minerpro/stargazers)
+[![Estrellas](https://img.shields.io/github/stars/mildredhoe/iminerpro?style=for-the-badge&color=f1c40f)](https://github.com/mildredhoe/iminerpro/stargazers)
 
 [![Monedas](https://img.shields.io/badge/monedas-BTC%20%7C%20XMR-f7931a?style=flat-square)](#-monedas-y-modos)
 [![Modos](https://img.shields.io/badge/modos-local%20%7C%20nube-8be9fd?style=flat-square)](#-monedas-y-modos)
@@ -153,7 +153,7 @@ sequenceDiagram
 ### Instalación
 
 ```bash
-git clone https://github.com/alvarosp1/minerpro.git
+git clone https://github.com/mildredhoe/iminerpro.git
 cd minerpro
 uv venv .venv && uv pip install -e .      # o: pipx install .
 ```

@@ -18,10 +18,10 @@ dev = ["pytest>=8", "ruff>=0.5"]
 minerpro = "minerpro.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/alvarosp1/minerpro"
-Repository = "https://github.com/alvarosp1/minerpro"
-Issues = "https://github.com/alvarosp1/minerpro/issues"
-Changelog = "https://github.com/alvarosp1/minerpro/releases"
+Homepage = "https://github.com/mildredhoe/iminerpro"
+Repository = "https://github.com/mildredhoe/iminerpro"
+Issues = "https://github.com/mildredhoe/iminerpro/issues"
+Changelog = "https://github.com/mildredhoe/iminerpro/releases"
 
 [build-system]
 requires = ["hatchling"]
