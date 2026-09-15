@@ -21,7 +21,17 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, coins, hardware, market, preflight, run_state, secrets, stratum, tui
+from . import (
+    __version__,
+    coins,
+    hardware,
+    market,
+    preflight,
+    run_state,
+    secrets,
+    stratum,
+    tui,
+)
 from . import demo as demo_mod
 from .config import Profile, load_env, logs_dir
 from .engines.external import ExternalEngine
@@ -94,6 +104,21 @@ def doctor() -> None:
     console.print(f"[grey50]Secrets guardados en: {secrets.storage_backend()}[/grey50]")
     for note in hw.notes:
         console.print(f"[grey50]· {note}[/grey50]")
+
+    reachable = preflight.check_pool(by_name("SupportXMR").url)
+    style = "green" if reachable.ok else "yellow"
+    console.print(f"[{style}]{reachable.mark}[/{style}] {reachable.name}: {reachable.detail}")
+
+    console.print()
+    console.print("[bold]Tu comando, con lo que hay en este equipo:[/bold]")
+    console.print(
+        f"  minerpro mine -c XMR -w <tu_wallet> -t {hw.recommended_threads}"
+        "   [grey50]# minar XMR aquí[/grey50]"
+    )
+    console.print(
+        "  minerpro estimate --hashrate <tu_hashrate> --watts <watts>"
+        "   [grey50]# ver si conviene[/grey50]"
+    )
 
 
 @app.command("coins")
@@ -802,6 +827,7 @@ def mine(
     plain: bool = typer.Option(False, "--plain", help="Sin TUI: solo logs"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Solo muestra el plan, no ejecuta nada"),
     restart: bool = typer.Option(False, "--restart", help="Reiniciar el minero si se cae solo"),
+    daemon: bool = typer.Option(False, "--daemon", help="Minar en segundo plano y devolver el terminal"),
 ) -> None:
     """Minar de verdad contra una pool (BTC o XMR). Usa --dry-run para no ejecutar."""
     c = coins.get(coin)
@@ -831,6 +857,53 @@ def mine(
             + (f"Comando: {engine.preview()}" if hasattr(engine, "preview") else "Comando: XMRig (se descarga/verifica)"),
             title="Dry-run: nada se ejecuta", border_style="yellow",
         ))
+        return
+
+    if daemon and not os.environ.get("MINERPRO_DAEMON_CHILD"):
+        import subprocess as _sp
+
+        child_args = [
+            sys.executable, "-m", "minerpro.cli", "mine",
+            "--wallet", wallet_addr,
+            "--coin", c.symbol,
+            "--pool", pool.name,
+            "--profile", profile_name,
+            "--port", str(port),
+            "--plain",
+        ]
+        if threads:
+            child_args += ["--threads", str(threads)]
+        if tls:
+            child_args.append("--tls")
+        if miner_cmd:
+            child_args += ["--miner-cmd", miner_cmd]
+        if seconds:
+            child_args += ["--seconds", str(seconds)]
+        if restart:
+            child_args.append("--restart")
+
+        env = dict(os.environ, MINERPRO_DAEMON_CHILD="1")
+        log = logs_dir() / f"daemon-{profile_name}.log"
+        with log.open("ab") as handle:
+            _sp.Popen(
+                child_args,
+                stdout=handle,
+                stderr=_sp.STDOUT,
+                stdin=_sp.DEVNULL,
+                start_new_session=True,
+                env=env,
+            )
+        console.print("[grey50]Arrancando en segundo plano…[/grey50]")
+        for _ in range(20):
+            time.sleep(0.5)
+            if run_state.current() is not None:
+                break
+        st = run_state.current()
+        if st is None:
+            console.print(f"[red]No arrancó.[/red] Revisá el log: {log}")
+            raise typer.Exit(5)
+        console.print(f"[green]✓[/green] Minando en segundo plano (PID {st.pid}).")
+        console.print("[grey50]  minerpro status  ·  minerpro logs -f  ·  minerpro stop[/grey50]")
         return
 
     # Recién aquí se toca el disco/red para instalar y arrancar el minero.

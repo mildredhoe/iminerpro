@@ -204,17 +204,19 @@ minerpro cloud buy -a SHA256 --market EU --price 0.0001 --amount 0.001 \
 ## ⌨️ Flujo recomendado en terminal
 
 ```bash
-minerpro doctor                      # ¿qué tengo y qué mineros hay?
+minerpro doctor                      # equipo, mineros, red y el comando exacto para ti
 minerpro estimate --hashrate 14000 --watts 95   # ¿me conviene minar aquí?
 minerpro estimate --speed 1 --days 1            # ¿y arrendar 1 GH/s?
-minerpro mine -c XMR -w <tu_xmr> --restart      # minar, con reinicio si se cae
+minerpro mine -c XMR -w <tu_xmr> --daemon       # minar en segundo plano
+minerpro mine -c XMR -w <tu_xmr> --restart      # o en primer plano, con reinicio
 # en otra terminal:
 minerpro status                      # PID, hashrate, shares, uptime
 minerpro logs -f                     # ver el log en vivo
 minerpro stop                        # parar limpio
 ```
 
-`mine` corre chequeos antes de arrancar (minero ejecutable, puerto libre, pool alcanzable) y
+`mine --daemon` suelta el terminal y deja el minero corriendo; `status`, `logs` y `stop` lo
+manejan igual. `mine` corre chequeos antes de arrancar (minero ejecutable, puerto libre, pool alcanzable) y
 avisa si algo está mal en vez de fallar en silencio. El estado queda en `~/.minerpro/run/`,
 así que `status`, `logs` y `stop` funcionan desde otra terminal.
 

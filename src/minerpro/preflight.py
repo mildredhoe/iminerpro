@@ -31,6 +31,12 @@ def check_pool(url: str, timeout: float = 5.0) -> Check:
     try:
         with socket.create_connection((host, int(port)), timeout=timeout):
             return Check("pool alcanzable", True, f"{url} responde")
+    except socket.gaierror:
+        return Check(
+            "pool alcanzable",
+            False,
+            f"no puedo resolver {host}: revisá tu conexión a internet o el DNS",
+        )
     except OSError as e:
         return Check("pool alcanzable", False, f"no pude conectar a {url}: {e.strerror or e}")
 
